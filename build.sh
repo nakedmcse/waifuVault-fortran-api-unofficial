@@ -11,7 +11,7 @@ ar rcs libfortran-curl.a curl.o curl_easy.o curl_multi.o curl_urlapi.o curl_util
 cp *.mod ../
 # Build waifuvault
 cd ..
+gfortran -c httpcallbackModule.f90
 gfortran -c waifuModelsModule.f90
 gfortran -cpp -c waifuAPIModule.f90
-gfortran -c httpcallbackModule.f90
 gfortran -o waifutest httpcallbackModule.o waifuModelsModule.o waifuAPIModule.o libcurl/libfortran-curl.a waifutest.f90 -lcurl

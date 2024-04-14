@@ -18,7 +18,7 @@ module waifuvault_models
 
     ! file_options
     type file_options
-        logical :: hasFilename
+        logical :: hideFilename
         logical :: oneTimeDownload
         logical :: protected
         contains
@@ -100,10 +100,10 @@ module waifuvault_models
             end if
         end function build_url
 
-        subroutine create_options(this, hasFilename, oneTimeDownload, protected)
+        subroutine create_options(this, hideFilename, oneTimeDownload, protected)
             class(file_options) :: this
-            logical :: hasFilename, oneTimeDownload, protected
-            this%hasFilename = hasFilename
+            logical :: hideFilename, oneTimeDownload, protected
+            this%hideFilename = hideFilename
             this%oneTimeDownload = oneTimeDownload
             this%protected = protected
         end subroutine create_options

@@ -67,16 +67,8 @@ module waifuvault_api
             rc = curl_easy_setopt(curl_ptr, CURLOPT_WRITEFUNCTION, c_funloc(response_callback))
             rc = curl_easy_setopt(curl_ptr, CURLOPT_WRITEDATA, c_loc(body))
             rc = curl_easy_perform(curl_ptr)
-            if (rc /= CURLE_OK) stop curl_easy_strerror(rc)
-            ! Deserialize response
-            call split_string(trim(body%content), ',', splits)
-            do i = 1, size(splits)
-                cleaned = ''
-                call remove_characters(trim(splits(i)),'"{}',cleaned)
-                print *, "Split ", i, ": ", trim(cleaned)
-            end do
-            print *
-            ! Check for errors
+            call checkError(rc, body%content)
+            res = deserializeResponse(body%content)
         end function fileInfo
 
         function fileUpdate(token, password, previous_password, custom_expiry, hide_filename) result (res)
@@ -110,26 +102,54 @@ module waifuvault_api
             ! Check for errors
         end subroutine getFile
 
-        function checkError(resp_code, body) result(res)
+        subroutine checkError(resp_code, body)
             character(len=*) :: body
             integer :: resp_code
-            logical :: res
-            res = .false.
-            ! Check for CURL failure, print, return true
-            ! Check resp_code > 400
-            ! If so deserialize error response
-            ! and return true
-        end function checkError
+            if (resp_code /= CURLE_OK) stop curl_easy_strerror(resp_code)
+            if (index(body, '"status":') > 0) stop body
+        end subroutine checkError
 
-        function deserializeResponse(body, string_retention) result (res)
+        function deserializeResponse(body) result (res)
             character(len=*) :: body
+            character(len=:), allocatable :: splits(:)
+            character(len=:), allocatable :: vals(:)
+            character(len=:), allocatable :: cleaned
             logical :: string_retention
             type(file_options) :: options
             type(file_response) :: res
-            ! If string_retention deserialize assuming retention is a string
-            ! else deserialize as retention being int
-            ! deserialize options
+            integer :: i
+
+            call split_string(trim(body), ',', splits)
+            do i = 1, size(splits)
+                cleaned = ''
+                call remove_characters(trim(splits(i)),'"{}',cleaned)
+                call split_string(cleaned, ':', vals)
+                if (vals(1) == 'token') then
+                    res%token = trim(vals(2))
+                elseif (vals(1) == 'url') then
+                    res%url = trim(vals(2)) // ':' // trim(vals(3))
+                elseif (vals(1) == 'retentionPeriod') then
+                    res%retentionPeriod = trim(vals(2))
+                elseif (vals(1) == 'options') then
+                    options%hideFilename = stringToLogical(vals(3))
+                elseif (vals(1) == 'oneTimeDownload') then
+                    options%oneTimeDownload = stringToLogical(vals(2))
+                elseif (vals(1) == 'protected') then
+                    options%protected = stringToLogical(vals(2))
+                end if
+            end do
+            res%options = options
         end function deserializeResponse
+
+        function stringToLogical(input) result (res)
+            character(len=*) :: input
+            logical :: res
+            if(input == 'true') then
+                res = .true.
+            else
+                res = .false.
+            end if
+        end function stringToLogical
 
         subroutine split_string(input_string, delimiter, substrings)
             character(len=*), intent(in) :: input_string
@@ -188,8 +208,18 @@ module waifuvault_api
                 end do
 
                 if (.not. is_remove_char) then
-                    temp_string = trim(temp_string) // original_string(i:i)
+                    if (original_string(i:i) == ' ') then
+                        temp_string = trim(temp_string) // '_'
+                    else
+                        temp_string = trim(temp_string) // original_string(i:i)
+                    end if
                 endif
+            end do
+
+            do i = 1, len_trim(temp_string)
+                if(temp_string(i:i) == '_') then
+                    temp_string(i:i) = ' '
+                end if
             end do
 
             new_string = trim(temp_string)

@@ -19,7 +19,7 @@ program test_waifuvault
 
     call options%create_options(.true., .true., .true.)
     print *, '--Options Object--'
-    print *, 'hasFilename:', options%hasFilename
+    print *, 'hideFilename:', options%hideFilename
     print *, 'oneTimeDownload:', options%oneTimeDownload
     print *, 'protected:', options%protected
     print *, ''
@@ -40,6 +40,14 @@ program test_waifuvault
     print *, ''
 
     call openCurl()
-    response = fileInfo('sometoken', .true.)
+    response = fileInfo('a7db7d50-7fd4-45cc-8f53-f0dee4a6fa9f', .true.)
+    print *, '--FileInfo Response Object--'
+    print *, 'Token:', trim(response%token)
+    print *, 'URL:', trim(response%url)
+    print *, 'Retention:', trim(response%retentionPeriod)
+    print *, 'Options/hideFilename:', response%options%hideFilename
+    print *, 'Options/oneTimeDownload:', response%options%oneTimeDownload
+    print *, 'Options/protected:', response%options%protected
+    print *, ''
     call closeCurl()
 end program test_waifuvault

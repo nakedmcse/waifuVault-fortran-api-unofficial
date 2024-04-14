@@ -47,8 +47,10 @@ module waifuvault_api
             type(response_type), target :: body
             character(len=*) :: token
             character(len=512) :: url
+            character(len=:), allocatable :: splits(:)
+            character(len=:), allocatable :: cleaned
             logical :: formatted
-            integer :: rc
+            integer :: rc,i
 
             url = ''
             url = trim(BASEURL) // '/' // trim(token) // '?formatted='
@@ -67,7 +69,12 @@ module waifuvault_api
             rc = curl_easy_perform(curl_ptr)
             if (rc /= CURLE_OK) stop curl_easy_strerror(rc)
             ! Deserialize response
-            print *, "Body:", body%content
+            call split_string(trim(body%content), ',', splits)
+            do i = 1, size(splits)
+                cleaned = ''
+                call remove_characters(trim(splits(i)),'"{}',cleaned)
+                print *, "Split ", i, ": ", trim(cleaned)
+            end do
             print *
             ! Check for errors
         end function fileInfo
@@ -123,4 +130,68 @@ module waifuvault_api
             ! else deserialize as retention being int
             ! deserialize options
         end function deserializeResponse
+
+        subroutine split_string(input_string, delimiter, substrings)
+            character(len=*), intent(in) :: input_string
+            character(len=1), intent(in) :: delimiter
+            character(len=:), allocatable, intent(out) :: substrings(:)
+
+            integer :: start, delim_pos, num_substrings, i
+            character(len=len(input_string)) :: temp_string
+
+            temp_string = input_string
+            num_substrings = 1
+            start = 1
+
+            ! Count number of substrings to allocate array
+            do while (index(temp_string, delimiter) /= 0)
+                num_substrings = num_substrings + 1
+                delim_pos = index(temp_string, delimiter)
+                temp_string = temp_string(delim_pos+1:)
+            end do
+
+            ! Allocate the substrings array
+            allocate(character(len=len(input_string)) :: substrings(num_substrings))
+
+            temp_string = input_string
+            i = 1
+            do while (index(temp_string, delimiter) /= 0)
+                delim_pos = index(temp_string, delimiter)
+                substrings(i) = temp_string(:delim_pos-1)
+                temp_string = temp_string(delim_pos+1:)
+                i = i + 1
+            end do
+
+            ! Last part after the last delimiter
+            substrings(i) = temp_string
+        end subroutine split_string
+
+        subroutine remove_characters(original_string, chars_to_remove, new_string)
+            character(len=*), intent(in) :: original_string
+            character(len=*), intent(in) :: chars_to_remove
+            character(len=:), allocatable, intent(out) :: new_string
+
+            integer :: i, j
+            logical :: is_remove_char
+            character(len=len(original_string)) :: temp_string
+
+            temp_string = ''
+
+            do i = 1, len_trim(original_string)
+                is_remove_char = .false.
+
+                do j = 1, len_trim(chars_to_remove)
+                    if (original_string(i:i) == chars_to_remove(j:j)) then
+                        is_remove_char = .true.
+                        exit
+                    endif
+                end do
+
+                if (.not. is_remove_char) then
+                    temp_string = trim(temp_string) // original_string(i:i)
+                endif
+            end do
+
+            new_string = trim(temp_string)
+        end subroutine remove_characters
 end module

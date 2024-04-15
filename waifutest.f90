@@ -49,5 +49,27 @@ program test_waifuvault
     print *, 'Options/oneTimeDownload:', response%options%oneTimeDownload
     print *, 'Options/protected:', response%options%protected
     print *, ''
+    call getError(error)
+    print *, '--Error Object--'
+    print *, 'Name:', trim(error%name)
+    print *, 'Status:', error%status
+    print *, 'Message:', trim(error%message)
+    print *, ''
+
+    response = fileInfo('balls', .true.)
+    print *, '--FileInfo Response Object--'
+    print *, 'Token:', trim(response%token)
+    print *, 'URL:', trim(response%url)
+    print *, 'Retention:', trim(response%retentionPeriod)
+    print *, 'Options/hideFilename:', response%options%hideFilename
+    print *, 'Options/oneTimeDownload:', response%options%oneTimeDownload
+    print *, 'Options/protected:', response%options%protected
+    print *, ''
+    call getError(error)
+    print *, '--Error Object--'
+    print *, 'Name:', trim(error%name)
+    print *, 'Status:', error%status
+    print *, 'Message:', trim(error%message)
+    print *, ''
     call closeCurl()
 end program test_waifuvault

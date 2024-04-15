@@ -11,7 +11,7 @@ module waifuvault_api
     type(error_response) error
     type(c_ptr) curl_ptr
 
-    public :: openCurl, closeCurl, fileInfo, response_callback
+    public :: openCurl, closeCurl, getError, fileInfo, response_callback
     private
 
     contains
@@ -29,6 +29,13 @@ module waifuvault_api
             call curl_easy_cleanup(curl_ptr)
             call curl_global_cleanup()
         end subroutine closeCurl
+
+        subroutine getError(ret_error)
+            type(error_response) :: ret_error
+            ret_error%name = error%name
+            ret_error%status = error%status
+            ret_error%message = error%message
+        end subroutine getError
 
         function uploadFile(fileObj) result (res)
             type(file_upload) :: fileObj
@@ -104,9 +111,34 @@ module waifuvault_api
 
         subroutine checkError(resp_code, body)
             character(len=*) :: body
-            integer :: resp_code
+            character(len=:), allocatable :: splits(:)
+            character(len=:), allocatable :: vals(:)
+            character(len=:), allocatable :: cleaned
+            type(error_response) :: ret_error
+            integer :: resp_code, p_err, i
+
+            ret_error%name = ''
+            ret_error%status = 0
+            ret_error%message = ''
+
             if (resp_code /= CURLE_OK) stop curl_easy_strerror(resp_code)
-            if (index(body, '"status":') > 0) stop body
+            if (index(body, '"status":') > 0) then
+                ! Deserialize error
+                call split_string(trim(body), ',', splits)
+                do i = 1, size(splits)
+                    cleaned = ''
+                    call remove_characters(trim(splits(i)),'"{}',cleaned)
+                    call split_string(cleaned, ':', vals)
+                    if (vals(1) == 'name') then
+                        ret_error%name = trim(vals(2))
+                    elseif (vals(1) == 'status') then
+                        read(vals(2), *, IOSTAT=p_err) ret_error%status
+                    elseif (vals(1) == 'message') then
+                        ret_error%message = trim(vals(2))
+                    end if
+                end do
+            end if
+            error = ret_error
         end subroutine checkError
 
         function deserializeResponse(body) result (res)

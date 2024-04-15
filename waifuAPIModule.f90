@@ -90,23 +90,49 @@ module waifuvault_api
         end function fileUpdate
 
         function deleteFile(token) result (res)
+            type(response_type), target :: body
             character(len=*) :: token
+            character(len=512) :: url
             logical :: res
-            ! Build delete URL
-            ! HTTP DELETE request
-            ! Check for errors
-            ! Return response bool
+
+            url = ''
+            url = trim(BASEURL) // '/' // trim(token)
+
+            curl_ptr = curl_easy_init()
+            rc = curl_easy_setopt(curl_ptr, CURLOPT_URL, trim(url))
+            rc = curl_easy_setopt(curl_ptr, CURLOPT_CUSTOMREQUEST, 'DELETE')
+            rc = curl_easy_setopt(curl_ptr, CURLOPT_FOLLOWLOCATION, 1)
+            rc = curl_easy_setopt(curl_ptr, CURLOPT_WRITEFUNCTION, c_funloc(response_callback))
+            rc = curl_easy_setopt(curl_ptr, CURLOPT_WRITEDATA, c_loc(body))
+            rc = curl_easy_perform(curl_ptr)
+            call checkError(rc, body%content)
+
+            if (body%content(1:4) == 'true') then
+                res = .true.
+            else
+                res = .false.
+            end if
         end function deleteFile
 
         subroutine getFile(fileObj, buffer, password)
             character(len=*) :: password
-            type(file_response) :: fileObj
+            type(file_response) :: fileObj, fileUrl
             type(memory_stream) :: buffer
-            ! if token and no filename, get info on token
-            ! build URL
+
+            if (len_trim(fileObj%url) == 0 .and. len_trim(fileObj%token) > 0) then
+                fileUrl = fileInfo(fileObj%token, .true.)
+                fileObj%url = fileUrl%url
+            end if
+
+            curl_ptr = curl_easy_init()
             ! if password set, then add x-password header
-            ! HTTP GET file to buffer
-            ! Check for errors
+            rc = curl_easy_setopt(curl_ptr, CURLOPT_URL, trim(fileObj%url))
+            rc = curl_easy_setopt(curl_ptr, CURLOPT_HTTPGET, 1)
+            rc = curl_easy_setopt(curl_ptr, CURLOPT_FOLLOWLOCATION, 1)
+            rc = curl_easy_setopt(curl_ptr, CURLOPT_WRITEFUNCTION, c_funloc(response_callback))
+            rc = curl_easy_setopt(curl_ptr, CURLOPT_WRITEDATA, c_loc(body))
+            rc = curl_easy_perform(curl_ptr)
+            call checkError(rc, body%content)
         end subroutine getFile
 
         subroutine checkError(resp_code, body)

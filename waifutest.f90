@@ -1,5 +1,6 @@
 ! Test Waifuvault module
 program test_waifuvault
+    use http_callback
     use waifuvault_models
     use waifuvault_api
     implicit none
@@ -9,6 +10,7 @@ program test_waifuvault
     type(file_options) :: options
     type(file_response) :: response
     type(error_response) :: error
+    type(response_type) :: filebuffer
 
     call url_upload%create_upload('https://somesite/somefile.png', '1d', 'somepassword', .true., .true.)
 
@@ -55,6 +57,10 @@ program test_waifuvault
     print *, 'Status:', error%status
     print *, 'Message:', trim(error%message)
     print *, ''
+
+    call getFile(response, filebuffer, '')
+    print *, '--Download File--'
+    print *, 'Size: ', len_trim(filebuffer%content)
 
     response = fileInfo('balls', .true.)
     print *, '--FileInfo Response Object--'

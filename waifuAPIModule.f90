@@ -11,7 +11,7 @@ module waifuvault_api
     type(error_response) error
     type(c_ptr) curl_ptr
 
-    public :: openCurl, closeCurl, getError, fileInfo, response_callback
+    public :: openCurl, closeCurl, getError, fileInfo, getFile, response_callback
     private
 
     contains
@@ -116,10 +116,10 @@ module waifuvault_api
         end function deleteFile
 
         subroutine getFile(fileObj, buffer, password)
-            type(response_type), target :: body
+            type(response_type), target :: buffer
+            type(c_ptr) :: headers
             character(len=*) :: password
             type(file_response) :: fileObj, fileUrl
-            type(memory_stream) :: buffer
             integer :: rc
 
             if (len_trim(fileObj%url) == 0 .and. len_trim(fileObj%token) > 0) then
@@ -128,14 +128,20 @@ module waifuvault_api
             end if
 
             curl_ptr = curl_easy_init()
-            ! if password set, then add x-password header
+            if (len_trim(password)>0) then
+                headers = curl_slist_append(headers, ('x-password: ' // password))
+                rc = curl_easy_setopt(curl_ptr, CURLOPT_HTTPHEADER, headers)
+            end if
             rc = curl_easy_setopt(curl_ptr, CURLOPT_URL, trim(fileObj%url))
             rc = curl_easy_setopt(curl_ptr, CURLOPT_HTTPGET, 1)
             rc = curl_easy_setopt(curl_ptr, CURLOPT_FOLLOWLOCATION, 1)
             rc = curl_easy_setopt(curl_ptr, CURLOPT_WRITEFUNCTION, c_funloc(response_callback))
-            rc = curl_easy_setopt(curl_ptr, CURLOPT_WRITEDATA, c_loc(body))
+            rc = curl_easy_setopt(curl_ptr, CURLOPT_WRITEDATA, c_loc(buffer))
             rc = curl_easy_perform(curl_ptr)
-            call checkError(rc, body%content)
+            call checkError(rc, buffer%content)
+            if (len_trim(password)>0) then
+                call curl_slist_free_all(headers)
+            end if
         end subroutine getFile
 
         subroutine checkError(resp_code, body)

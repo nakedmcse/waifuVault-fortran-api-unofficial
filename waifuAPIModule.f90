@@ -93,6 +93,7 @@ module waifuvault_api
             type(response_type), target :: body
             character(len=*) :: token
             character(len=512) :: url
+            integer :: rc
             logical :: res
 
             url = ''
@@ -115,9 +116,11 @@ module waifuvault_api
         end function deleteFile
 
         subroutine getFile(fileObj, buffer, password)
+            type(response_type), target :: body
             character(len=*) :: password
             type(file_response) :: fileObj, fileUrl
             type(memory_stream) :: buffer
+            integer :: rc
 
             if (len_trim(fileObj%url) == 0 .and. len_trim(fileObj%token) > 0) then
                 fileUrl = fileInfo(fileObj%token, .true.)

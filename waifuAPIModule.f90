@@ -11,7 +11,7 @@ module waifuvault_api
     type(error_response) error
     type(c_ptr) curl_ptr
 
-    public :: openCurl, closeCurl, getError, fileInfo, getFile, response_callback
+    public :: openCurl, closeCurl, getError, fileInfo, fileUpdate, getFile, response_callback
     private
 
     contains
@@ -80,13 +80,51 @@ module waifuvault_api
 
         function fileUpdate(token, password, previous_password, custom_expiry, hide_filename) result (res)
             type(file_response) :: res
+            type(response_type), target :: body
+            type(c_ptr) :: headers
             character(len=*) :: token, password, previous_password, custom_expiry
+            character(len=512) :: url
+            character(len=4096) :: fields
             logical :: hide_filename
-            ! Build update URL
-            ! Build update headers based on params
-            ! HTTP PATCH request
-            ! Deserialize response
-            ! Check for errors
+            integer :: rc
+
+            url = ''
+            url = trim(BASEURL) // '/' // trim(token)
+            curl_ptr = curl_easy_init()
+            headers = curl_slist_append(headers, 'Content-Type: application/json; charset=utf-8')
+            rc = curl_easy_setopt(curl_ptr, CURLOPT_HTTPHEADER, headers)
+
+            fields = ''
+            fields = trim(fields) // '{"password":"'
+            if (len_trim(password)>0) then
+                fields = trim(fields) // password
+            end if
+            fields = trim(fields) // '","previousPassword":"'
+            if (len_trim(previous_password)>0) then
+                fields = trim(fields) // previous_password
+            end if
+            fields = trim(fields) // '","customExpiry":"'
+            if (len_trim(custom_expiry)>0) then
+                fields = trim(fields) // custom_expiry
+            end if
+            fields = trim(fields) // '","hideFilename":'
+            if (hide_filename .eqv. .true.) then
+                fields = trim(fields) // 'true'
+            else
+                fields = trim(fields) // 'false'
+            end if
+            fields = trim(fields) // '}'
+
+            rc = curl_easy_setopt(curl_ptr, CURLOPT_URL, trim(url))
+            rc = curl_easy_setopt(curl_ptr, CURLOPT_CUSTOMREQUEST, 'PATCH')
+            rc = curl_easy_setopt(curl_ptr, CURLOPT_FOLLOWLOCATION, 1)
+            rc = curl_easy_setopt(curl_ptr, CURLOPT_WRITEFUNCTION, c_funloc(response_callback))
+            rc = curl_easy_setopt(curl_ptr, CURLOPT_WRITEDATA, c_loc(body))
+            rc = curl_easy_setopt(curl_ptr, CURLOPT_POSTFIELDS, trim(fields))
+            rc = curl_easy_perform(curl_ptr)
+
+            call checkError(rc, body%content)
+            res = deserializeResponse(body%content)
         end function fileUpdate
 
         function deleteFile(token) result (res)

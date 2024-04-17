@@ -41,12 +41,15 @@ module waifuvault_api
             type(file_upload) :: fileObj
             type(file_response) :: res
             type(response_type), target :: body
-            character(len=512) :: target_url, fields
+            type(c_ptr) :: formpost, lastptr
+            character(len=512) :: target_url
+            character(len=:), allocatable, target :: fields
             integer :: rc
 
             target_url = fileObj%build_url()
             curl_ptr = curl_easy_init()
             if (len_trim(fileObj%url) > 0) then
+                ! URL Upload
                 fields = 'url='
                 fields = trim(fields) // curl_easy_escape(curl_ptr, trim(fileObj%url), len_trim(fileObj%url))
                 rc = curl_easy_setopt(curl_ptr, CURLOPT_URL, trim(target_url))
@@ -54,12 +57,32 @@ module waifuvault_api
                 rc = curl_easy_setopt(curl_ptr, CURLOPT_FOLLOWLOCATION, 1)
                 rc = curl_easy_setopt(curl_ptr, CURLOPT_WRITEFUNCTION, c_funloc(response_callback))
                 rc = curl_easy_setopt(curl_ptr, CURLOPT_WRITEDATA, c_loc(body))
-                rc = curl_easy_setopt(curl_ptr, CURLOPT_POSTFIELDS, trim(fields))
+                rc = curl_easy_setopt(curl_ptr, CURLOPT_POSTFIELDS, c_loc(fields))
+                rc = curl_easy_setopt(curl_ptr, CURLOPT_POSTFIELDSIZE, len(fields))
+                rc = curl_easy_perform(curl_ptr)
+            elseif (len_trim(fileObj%filename) > 0 .and. .not. allocated(fileObj%buffer)) then
+                ! File Upload
+                rc = curl_easy_setopt(curl_ptr, CURLOPT_URL, trim(target_url))
+                rc = curl_easy_setopt(curl_ptr, CURLOPT_CUSTOMREQUEST, 'PUT')
+                rc = curl_easy_setopt(curl_ptr, CURLOPT_FOLLOWLOCATION, 1)
+                rc = curl_easy_setopt(curl_ptr, CURLOPT_WRITEFUNCTION, c_funloc(response_callback))
+                rc = curl_easy_setopt(curl_ptr, CURLOPT_WRITEDATA, c_loc(body))
+                rc = curl_easy_setopt(curl_ptr, CURLOPT_UPLOAD, 1)
+                !rc = curl_easy_setopt(curl_ptr, CURLOPT_READDATA, trim(fileObj%filename))
+                rc = curl_easy_perform(curl_ptr)
+            else
+                ! Buffer Upload
+                rc = curl_easy_setopt(curl_ptr, CURLOPT_URL, trim(target_url))
+                rc = curl_easy_setopt(curl_ptr, CURLOPT_CUSTOMREQUEST, 'PUT')
+                rc = curl_easy_setopt(curl_ptr, CURLOPT_FOLLOWLOCATION, 1)
+                rc = curl_easy_setopt(curl_ptr, CURLOPT_WRITEFUNCTION, c_funloc(response_callback))
+                rc = curl_easy_setopt(curl_ptr, CURLOPT_WRITEDATA, c_loc(body))
+                rc = curl_easy_setopt(curl_ptr, CURLOPT_HTTPPOST, formpost)
+                rc = curl_easy_setopt(curl_ptr, CURLOPT_UPLOAD, 1)
+                !rc = curl_easy_setopt(curl_ptr, CURLOPT_READDATA, fileObj%buffer)
                 rc = curl_easy_perform(curl_ptr)
             end if
-            ! If file upload with file params
-            ! If buffer upload with buffer params
-            ! PUT request
+
             call checkError(rc, body%content)
             res = deserializeResponse(body%content)
         end function uploadFile

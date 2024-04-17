@@ -40,13 +40,28 @@ module waifuvault_api
         function uploadFile(fileObj) result (res)
             type(file_upload) :: fileObj
             type(file_response) :: res
-            ! Build URL
-            ! If URL upload with URL params
+            type(response_type), target :: body
+            character(len=512) :: target_url, fields
+            integer :: rc
+
+            target_url = fileObj%build_url()
+            curl_ptr = curl_easy_init()
+            if (len_trim(fileObj%url) > 0) then
+                fields = 'url='
+                fields = trim(fields) // curl_easy_escape(curl_ptr, trim(fileObj%url), len_trim(fileObj%url))
+                rc = curl_easy_setopt(curl_ptr, CURLOPT_URL, trim(target_url))
+                rc = curl_easy_setopt(curl_ptr, CURLOPT_CUSTOMREQUEST, 'PUT')
+                rc = curl_easy_setopt(curl_ptr, CURLOPT_FOLLOWLOCATION, 1)
+                rc = curl_easy_setopt(curl_ptr, CURLOPT_WRITEFUNCTION, c_funloc(response_callback))
+                rc = curl_easy_setopt(curl_ptr, CURLOPT_WRITEDATA, c_loc(body))
+                rc = curl_easy_setopt(curl_ptr, CURLOPT_POSTFIELDS, trim(fields))
+                rc = curl_easy_perform(curl_ptr)
+            end if
             ! If file upload with file params
             ! If buffer upload with buffer params
             ! PUT request
-            ! Deserialize response
-            ! Check for errors
+            call checkError(rc, body%content)
+            res = deserializeResponse(body%content)
         end function uploadFile
 
         function fileInfo(token, formatted) result (res)

@@ -44,7 +44,7 @@ module waifuvault_api
             type(c_ptr) :: formpost, lastptr
             character(len=512) :: target_url
             character(len=:), allocatable, target :: fields
-            integer :: rc
+            integer :: rc, iostatus
 
             target_url = fileObj%build_url()
             curl_ptr = curl_easy_init()
@@ -62,14 +62,16 @@ module waifuvault_api
                 rc = curl_easy_perform(curl_ptr)
             elseif (len_trim(fileObj%filename) > 0 .and. .not. allocated(fileObj%buffer)) then
                 ! File Upload
+                open(unit=10, file=trim(fileObj%filename), status='old', action='read', iostat=iostatus)
                 rc = curl_easy_setopt(curl_ptr, CURLOPT_URL, trim(target_url))
                 rc = curl_easy_setopt(curl_ptr, CURLOPT_CUSTOMREQUEST, 'PUT')
                 rc = curl_easy_setopt(curl_ptr, CURLOPT_FOLLOWLOCATION, 1)
                 rc = curl_easy_setopt(curl_ptr, CURLOPT_WRITEFUNCTION, c_funloc(response_callback))
                 rc = curl_easy_setopt(curl_ptr, CURLOPT_WRITEDATA, c_loc(body))
                 rc = curl_easy_setopt(curl_ptr, CURLOPT_UPLOAD, 1)
-                !rc = curl_easy_setopt(curl_ptr, CURLOPT_READDATA, trim(fileObj%filename))
+                rc = curl_easy_setopt(curl_ptr, CURLOPT_READDATA, 10)
                 rc = curl_easy_perform(curl_ptr)
+                close(10)
             else
                 ! Buffer Upload
                 rc = curl_easy_setopt(curl_ptr, CURLOPT_URL, trim(target_url))

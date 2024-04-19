@@ -11,6 +11,7 @@ program test_waifuvault
     type(file_response) :: response
     type(error_response) :: error
     type(response_type) :: filebuffer
+    logical :: delete_response
 
     call url_upload%create_upload('https://somesite/somefile.png', '1d', 'somepassword', .true., .true.)
 
@@ -77,5 +78,28 @@ program test_waifuvault
     print *, 'Status:', error%status
     print *, 'Message:', trim(error%message)
     print *, ''
+
+    call url_upload%create_upload('https://waifuvault.moe/assets/custom/images/08.png', '10m', '', .false., .false.)
+    response = uploadFile(url_upload)
+    print *, '--URL Upload Response Object--'
+    print *, 'Token:', trim(response%token)
+    print *, 'URL:', trim(response%url)
+    print *, ''
+
+    response = fileInfo(response%token, .true.)
+    print *, '--FileInfo Response Object--'
+    print *, 'Token:', trim(response%token)
+    print *, 'URL:', trim(response%url)
+    print *, 'Retention:', trim(response%retentionPeriod)
+    print *, 'Options/hideFilename:', response%options%hideFilename
+    print *, 'Options/oneTimeDownload:', response%options%oneTimeDownload
+    print *, 'Options/protected:', response%options%protected
+    print *, ''
+
+    delete_response = deleteFile(response%token)
+    print *, '--Delete File Response--'
+    print *, 'Response:', delete_response
+
     call closeCurl()
+
 end program test_waifuvault

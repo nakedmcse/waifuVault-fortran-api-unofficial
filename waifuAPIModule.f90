@@ -11,7 +11,7 @@ module waifuvault_api
     type(error_response) error
     type(c_ptr) curl_ptr
 
-    public :: openCurl, closeCurl, getError, fileInfo, fileUpdate, getFile, response_callback
+    public :: openCurl, closeCurl, getError, fileInfo, fileUpdate, getFile, uploadFile, deleteFile, response_callback
     private
 
     contains

@@ -99,12 +99,19 @@ program test_waifuvault
     delete_response = deleteFile(response%token)
     print *, '--Delete File Response--'
     print *, 'Response:', delete_response
+    print *, ''
 
-    call realfile_upload%create_upload('./RoryMercury.png', '10m', '', .false., .false.)
+    call realfile_upload%create_upload('RoryMercury.png', '10m', '', .false., .false.)
     response = uploadFile(realfile_upload)
     print *, '--File Upload Response Object--'
     print *, 'Token:', trim(response%token)
     print *, 'URL:', trim(response%url)
+    print *, ''
+    call getError(error)
+    print *, '--Error Object--'
+    print *, 'Name:', trim(error%name)
+    print *, 'Status:', error%status
+    print *, 'Message:', trim(error%message)
     print *, ''
 
     response = fileInfo(response%token, .true.)

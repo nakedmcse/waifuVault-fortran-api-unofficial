@@ -41,9 +41,9 @@ module waifuvault_api
             type(file_upload) :: fileObj
             type(file_response) :: res
             type(response_type), target :: body
-            type(c_ptr) :: formpost, lastptr
-            character(len=512) :: target_url
-            character(len=:), allocatable, target :: fields
+            type(c_ptr) :: headers = c_null_ptr
+            character(len=512) :: target_url, stringsize
+            character(len=:), allocatable, target :: fields, seperator
             character(len=:), allocatable, target :: filebuffer
             integer :: rc, iostatus, filesize
 
@@ -65,28 +65,57 @@ module waifuvault_api
                 ! File Upload
                 open(unit=10, file=trim(fileObj%filename), form='unformatted', access='stream', action='read', iostat=iostatus)
                 inquire(unit=10, size=filesize)
+                write(stringsize, '(I32)') filesize
+                stringsize = adjustl(stringsize)
                 allocate(character(len=filesize) :: filebuffer)
                 read(10, iostat=iostatus) filebuffer
+                seperator = '-----' // trim(stringsize) // '-----'
+                fields = '--' // seperator // achar(13) // achar(10) &
+                    // 'Content-Disposition: form-data; name="file"; filename="' // basename(trim(fileObj%filename)) &
+                    // '"' // achar(13) // achar(10) &
+                    // 'Content-Length: ' // trim(stringsize) // achar(13) // achar(10)  &
+                    // 'Content-Type: octet-stream' // achar(13) // achar(10) // 'Content-Transfer-Encoding: binary' &
+                    // achar(13) // achar(10) &
+                    // achar(13) // achar(10) // filebuffer // achar(13) // achar(10) // '--' // seperator // '--'
+                headers = curl_slist_append(headers, ('Content-Type: multipart/form-data; boundary="'  &
+                        // seperator // '"'))
                 rc = curl_easy_setopt(curl_ptr, CURLOPT_URL, trim(target_url))
+                rc = curl_easy_setopt(curl_ptr, CURLOPT_HTTPHEADER, headers)
                 rc = curl_easy_setopt(curl_ptr, CURLOPT_CUSTOMREQUEST, 'PUT')
                 rc = curl_easy_setopt(curl_ptr, CURLOPT_FOLLOWLOCATION, 1)
                 rc = curl_easy_setopt(curl_ptr, CURLOPT_WRITEFUNCTION, c_funloc(response_callback))
                 rc = curl_easy_setopt(curl_ptr, CURLOPT_WRITEDATA, c_loc(body))
-                rc = curl_easy_setopt(curl_ptr, CURLOPT_UPLOAD, 1)
-                rc = curl_easy_setopt(curl_ptr, CURLOPT_READDATA, c_loc(filebuffer))
+                rc = curl_easy_setopt(curl_ptr, CURLOPT_POSTFIELDS, c_loc(fields))
+                rc = curl_easy_setopt(curl_ptr, CURLOPT_POSTFIELDSIZE, len(fields))
                 rc = curl_easy_perform(curl_ptr)
+                call curl_slist_free_all(headers)
                 close(10)
             else
                 ! Buffer Upload
+                filesize = len(fileObj%buffer)
+                write(stringsize, '(I32)') filesize
+                stringsize = adjustl(stringsize)
+                seperator = '-----' // trim(stringsize) // '-----'
+                fields = '--' // seperator // achar(13) // achar(10) &
+                        // 'Content-Disposition: form-data; name="file"; filename="' // basename(trim(fileObj%filename)) &
+                        // '"' // achar(13) // achar(10) &
+                        // 'Content-Length: ' // trim(stringsize) // achar(13) // achar(10)  &
+                        // 'Content-Type: octet-stream' // achar(13) // achar(10) // 'Content-Transfer-Encoding: binary' &
+                        // achar(13) // achar(10) &
+                        // achar(13) // achar(10) // fileObj%buffer // achar(13) // achar(10) // '--' &
+                        // seperator // '--'
+                headers = curl_slist_append(headers, ('Content-Type: multipart/form-data; boundary="'  &
+                        // seperator // '"'))
                 rc = curl_easy_setopt(curl_ptr, CURLOPT_URL, trim(target_url))
+                rc = curl_easy_setopt(curl_ptr, CURLOPT_HTTPHEADER, headers)
                 rc = curl_easy_setopt(curl_ptr, CURLOPT_CUSTOMREQUEST, 'PUT')
                 rc = curl_easy_setopt(curl_ptr, CURLOPT_FOLLOWLOCATION, 1)
                 rc = curl_easy_setopt(curl_ptr, CURLOPT_WRITEFUNCTION, c_funloc(response_callback))
                 rc = curl_easy_setopt(curl_ptr, CURLOPT_WRITEDATA, c_loc(body))
-                rc = curl_easy_setopt(curl_ptr, CURLOPT_HTTPPOST, formpost)
-                rc = curl_easy_setopt(curl_ptr, CURLOPT_UPLOAD, 1)
-                !rc = curl_easy_setopt(curl_ptr, CURLOPT_READDATA, fileObj%buffer)
+                rc = curl_easy_setopt(curl_ptr, CURLOPT_POSTFIELDS, c_loc(fields))
+                rc = curl_easy_setopt(curl_ptr, CURLOPT_POSTFIELDSIZE, len(fields))
                 rc = curl_easy_perform(curl_ptr)
+                call curl_slist_free_all(headers)
             end if
 
             call checkError(rc, body%content)
@@ -125,7 +154,7 @@ module waifuvault_api
         function fileUpdate(token, password, previous_password, custom_expiry, hide_filename) result (res)
             type(file_response) :: res
             type(response_type), target :: body
-            type(c_ptr) :: headers
+            type(c_ptr) :: headers = c_null_ptr
             character(len=*) :: token, password, previous_password, custom_expiry
             character(len=512) :: url
             character(len=4096) :: fields
@@ -199,7 +228,7 @@ module waifuvault_api
 
         subroutine getFile(fileObj, buffer, password)
             type(response_type), target :: buffer
-            type(c_ptr) :: headers
+            type(c_ptr) :: headers = c_null_ptr
             character(len=*) :: password
             type(file_response) :: fileObj, fileUrl
             integer :: rc
@@ -299,6 +328,21 @@ module waifuvault_api
                 res = .false.
             end if
         end function stringToLogical
+
+        function basename(path)
+            character(len=*), intent(in) :: path
+            character(len=len(path)) :: basename
+            integer :: i
+
+            do i = len(path), 1, -1
+                if (path(i:i) == '/' .or. path(i:i) == '\') then
+                    basename = path(i+1:)
+                    return
+                endif
+            end do
+
+            basename = path
+        end function basename
 
         subroutine split_string(input_string, delimiter, substrings)
             character(len=*), intent(in) :: input_string

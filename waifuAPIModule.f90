@@ -43,7 +43,8 @@ module waifuvault_api
             type(response_type), target :: body
             type(c_ptr) :: headers = c_null_ptr
             character(len=512) :: target_url, stringsize
-            character(len=:), allocatable, target :: fields, seperator
+            character(len=:), allocatable :: fullfilename
+            character(len=:), allocatable, target :: fields, buffer_fields, seperator
             character(len=:), allocatable, target :: filebuffer
             integer :: rc, iostatus, filesize
 
@@ -63,7 +64,9 @@ module waifuvault_api
                 rc = curl_easy_perform(curl_ptr)
             elseif (len_trim(fileObj%filename) > 0 .and. .not. allocated(fileObj%buffer)) then
                 ! File Upload
-                open(unit=10, file=trim(fileObj%filename), form='unformatted', access='stream', action='read', iostat=iostatus)
+                call expandHomedir(trim(fileObj%filename), fullfilename)
+                print *, fullfilename
+                open(unit=10, file=fullfilename, form='unformatted', access='stream', action='read', iostat=iostatus)
                 inquire(unit=10, size=filesize)
                 write(stringsize, '(I32)') filesize
                 stringsize = adjustl(stringsize)
@@ -71,7 +74,7 @@ module waifuvault_api
                 read(10, iostat=iostatus) filebuffer
                 seperator = '-----' // trim(stringsize) // '-----'
                 fields = '--' // seperator // achar(13) // achar(10) &
-                    // 'Content-Disposition: form-data; name="file"; filename="' // basename(trim(fileObj%filename)) &
+                    // 'Content-Disposition: form-data; name="file"; filename="' // basename(fullfilename) &
                     // '"' // achar(13) // achar(10) &
                     // 'Content-Length: ' // trim(stringsize) // achar(13) // achar(10)  &
                     // 'Content-Type: octet-stream' // achar(13) // achar(10) // 'Content-Transfer-Encoding: binary' &
@@ -97,12 +100,14 @@ module waifuvault_api
                 stringsize = adjustl(stringsize)
                 seperator = '-----' // trim(stringsize) // '-----'
                 fields = '--' // seperator // achar(13) // achar(10) &
-                        // 'Content-Disposition: form-data; name="file"; filename="' // basename(trim(fileObj%filename)) &
+                        // 'Content-Disposition: form-data; name="file"; filename="' &
+                        // basename(trim(fileObj%filename)) &
                         // '"' // achar(13) // achar(10) &
                         // 'Content-Length: ' // trim(stringsize) // achar(13) // achar(10)  &
-                        // 'Content-Type: octet-stream' // achar(13) // achar(10) // 'Content-Transfer-Encoding: binary' &
+                        // 'Content-Type: octet-stream' // achar(13) // achar(10) &
+                        // 'Content-Transfer-Encoding: binary' &
                         // achar(13) // achar(10) &
-                        // achar(13) // achar(10) // fileObj%buffer // achar(13) // achar(10) // '--' &
+                        !// achar(13) // achar(10) // fileObj%buffer // achar(13) // achar(10) // '--' &
                         // seperator // '--'
                 headers = curl_slist_append(headers, ('Content-Type: multipart/form-data; boundary="'  &
                         // seperator // '"'))
@@ -343,6 +348,32 @@ module waifuvault_api
 
             basename = path
         end function basename
+
+        subroutine expandHomedir(path, result)
+            character(len=*), intent(in) :: path
+            character(len=:), allocatable :: result
+            character(len=1000) :: home
+            integer :: status
+
+            call getHomeDirectory(home, status)
+
+            if (path(1:1) == '~' .and. status == 0) then
+                result = trim(home) // path(2:)
+            else
+                result = path
+            end if
+        end subroutine expandHomedir
+
+        subroutine getHomeDirectory(home, status)
+            character(len=*), intent(out) :: home
+            integer, intent(out) :: status
+
+            call get_environment_variable("HOME", home, status=status)
+
+            if (status /= 0) then
+                home = ''
+            end if
+        end subroutine getHomeDirectory
 
         subroutine split_string(input_string, delimiter, substrings)
             character(len=*), intent(in) :: input_string

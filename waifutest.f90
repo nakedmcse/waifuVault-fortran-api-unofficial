@@ -101,7 +101,7 @@ program test_waifuvault
     print *, 'Response:', delete_response
     print *, ''
 
-    call realfile_upload%create_upload('RoryMercury.png', '10m', '', .false., .false.)
+    call realfile_upload%create_upload('~/Downloads/rider3.png', '10m', '', .false., .false.)
     response = uploadFile(realfile_upload)
     print *, '--File Upload Response Object--'
     print *, 'Token:', trim(response%token)

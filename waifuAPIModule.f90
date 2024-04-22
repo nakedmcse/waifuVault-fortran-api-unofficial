@@ -44,7 +44,7 @@ module waifuvault_api
             type(c_ptr) :: headers = c_null_ptr
             character(len=512) :: target_url, stringsize
             character(len=:), allocatable :: fullfilename
-            character(len=:), allocatable, target :: fields, buffer_fields, seperator
+            character(len=:), allocatable, target :: fields, seperator
             character(len=:), allocatable, target :: filebuffer
             integer :: rc, iostatus, filesize
 
@@ -107,7 +107,7 @@ module waifuvault_api
                         // 'Content-Type: octet-stream' // achar(13) // achar(10) &
                         // 'Content-Transfer-Encoding: binary' &
                         // achar(13) // achar(10) &
-                        !// achar(13) // achar(10) // fileObj%buffer // achar(13) // achar(10) // '--' &
+                        // achar(13) // achar(10) // fileObj%buffer // achar(13) // achar(10) // '--' &
                         // seperator // '--'
                 headers = curl_slist_append(headers, ('Content-Type: multipart/form-data; boundary="'  &
                         // seperator // '"'))
@@ -162,7 +162,7 @@ module waifuvault_api
             type(c_ptr) :: headers = c_null_ptr
             character(len=*) :: token, password, previous_password, custom_expiry
             character(len=512) :: url
-            character(len=4096) :: fields
+            character(len=4096), target :: fields
             logical :: hide_filename
             integer :: rc
 
@@ -198,7 +198,7 @@ module waifuvault_api
             rc = curl_easy_setopt(curl_ptr, CURLOPT_FOLLOWLOCATION, 1)
             rc = curl_easy_setopt(curl_ptr, CURLOPT_WRITEFUNCTION, c_funloc(response_callback))
             rc = curl_easy_setopt(curl_ptr, CURLOPT_WRITEDATA, c_loc(body))
-            rc = curl_easy_setopt(curl_ptr, CURLOPT_POSTFIELDS, trim(fields))
+            rc = curl_easy_setopt(curl_ptr, CURLOPT_POSTFIELDS, c_loc(fields))
             rc = curl_easy_perform(curl_ptr)
 
             call checkError(rc, body%content)

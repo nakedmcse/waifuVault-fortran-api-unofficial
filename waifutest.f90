@@ -124,6 +124,22 @@ program test_waifuvault
     print *, 'Options/protected:', response%options%protected
     print *, ''
 
+    response = fileUpdate(response%token, '', '', '1h', .false.)
+    print *, '--FileUpdate Response Object--'
+    print *, 'Token:', trim(response%token)
+    print *, 'URL:', trim(response%url)
+    print *, 'Retention:', trim(response%retentionPeriod)
+    print *, 'Options/hideFilename:', response%options%hideFilename
+    print *, 'Options/oneTimeDownload:', response%options%oneTimeDownload
+    print *, 'Options/protected:', response%options%protected
+    print *, ''
+    call getError(error)
+    print *, '--Error Object--'
+    print *, 'Name:', trim(error%name)
+    print *, 'Status:', error%status
+    print *, 'Message:', trim(error%message)
+    print *, ''
+
     delete_response = deleteFile(response%token)
     print *, '--Delete File Response--'
     print *, 'Response:', delete_response

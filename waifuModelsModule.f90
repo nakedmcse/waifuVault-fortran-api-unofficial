@@ -5,7 +5,7 @@ module waifuvault_models
     type file_upload
         character(len=512) :: filename
         character(len=512) :: url
-        character, allocatable :: buffer(:)
+        character(len=:), allocatable :: buffer
         integer :: buffer_size
         character(len=10) :: expires
         character(len=512) :: password

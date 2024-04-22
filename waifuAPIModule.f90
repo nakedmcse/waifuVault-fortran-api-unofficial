@@ -1,5 +1,5 @@
 ! Waifuvault API module
-#define BASEURL "https://waifuvault.walker.moe/rest"
+#define BASEURL "https://waifuvault.moe/rest"
 module waifuvault_api
     use, intrinsic :: iso_c_binding
     use, intrinsic :: iso_fortran_env

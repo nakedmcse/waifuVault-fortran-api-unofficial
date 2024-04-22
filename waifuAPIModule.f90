@@ -65,7 +65,6 @@ module waifuvault_api
             elseif (len_trim(fileObj%filename) > 0 .and. .not. allocated(fileObj%buffer)) then
                 ! File Upload
                 call expandHomedir(trim(fileObj%filename), fullfilename)
-                print *, fullfilename
                 open(unit=10, file=fullfilename, form='unformatted', access='stream', action='read', iostat=iostatus)
                 inquire(unit=10, size=filesize)
                 write(stringsize, '(I32)') filesize
@@ -80,6 +79,7 @@ module waifuvault_api
                     // 'Content-Type: octet-stream' // achar(13) // achar(10) // 'Content-Transfer-Encoding: binary' &
                     // achar(13) // achar(10) &
                     // achar(13) // achar(10) // filebuffer // achar(13) // achar(10) // '--' // seperator // '--'
+                headers = c_null_ptr
                 headers = curl_slist_append(headers, ('Content-Type: multipart/form-data; boundary="'  &
                         // seperator // '"'))
                 rc = curl_easy_setopt(curl_ptr, CURLOPT_URL, trim(target_url))
@@ -92,6 +92,7 @@ module waifuvault_api
                 rc = curl_easy_setopt(curl_ptr, CURLOPT_POSTFIELDSIZE, len(fields))
                 rc = curl_easy_perform(curl_ptr)
                 call curl_slist_free_all(headers)
+                deallocate(filebuffer)
                 close(10)
             else
                 ! Buffer Upload
@@ -101,7 +102,7 @@ module waifuvault_api
                 seperator = '-----' // trim(stringsize) // '-----'
                 fields = '--' // seperator // achar(13) // achar(10) &
                         // 'Content-Disposition: form-data; name="file"; filename="' &
-                        // basename(trim(fileObj%filename)) &
+                        // trim(fileObj%filename) &
                         // '"' // achar(13) // achar(10) &
                         // 'Content-Length: ' // trim(stringsize) // achar(13) // achar(10)  &
                         // 'Content-Type: octet-stream' // achar(13) // achar(10) &
@@ -109,6 +110,7 @@ module waifuvault_api
                         // achar(13) // achar(10) &
                         // achar(13) // achar(10) // fileObj%buffer // achar(13) // achar(10) // '--' &
                         // seperator // '--'
+                headers = c_null_ptr
                 headers = curl_slist_append(headers, ('Content-Type: multipart/form-data; boundary="'  &
                         // seperator // '"'))
                 rc = curl_easy_setopt(curl_ptr, CURLOPT_URL, trim(target_url))

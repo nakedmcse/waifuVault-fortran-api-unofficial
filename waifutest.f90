@@ -6,11 +6,12 @@ program test_waifuvault
     implicit none
 
     character(len=512) :: built_url
-    type(file_upload) :: url_upload, realfile_upload
+    type(file_upload) :: url_upload, realfile_upload, buffer_upload
     type(file_options) :: options
     type(file_response) :: response
     type(error_response) :: error
     type(response_type) :: filebuffer
+    integer :: iostatus
     logical :: delete_response
 
     call url_upload%create_upload('https://somesite/somefile.png', '1d', 'somepassword', .true., .true.)
@@ -133,11 +134,29 @@ program test_waifuvault
     print *, 'Options/oneTimeDownload:', response%options%oneTimeDownload
     print *, 'Options/protected:', response%options%protected
     print *, ''
-    call getError(error)
-    print *, '--Error Object--'
-    print *, 'Name:', trim(error%name)
-    print *, 'Status:', error%status
-    print *, 'Message:', trim(error%message)
+
+    delete_response = deleteFile(response%token)
+    print *, '--Delete File Response--'
+    print *, 'Response:', delete_response
+
+    buffer_upload%filename = 'RoryMercuryFromBuffer.png'
+    buffer_upload%url = ''  !IMPORTANT to init url empty
+    buffer_upload%expires = '10m'
+    buffer_upload%password = ''
+    buffer_upload%hideFilename = .false.
+    buffer_upload%oneTimeDownload = .false.
+
+    open(unit=10, file='RoryMercury.png', form='unformatted', access='stream', action='read', iostat=iostatus)
+    inquire(unit=10, size=buffer_upload%buffer_size)
+    allocate(character(len=buffer_upload%buffer_size) :: buffer_upload%buffer)
+    read(10, iostat=iostatus) buffer_upload%buffer
+
+    response = uploadFile(buffer_upload)
+    close(10)
+    deallocate(buffer_upload%buffer)
+    print *, '--File Upload Response Object--'
+    print *, 'Token:', trim(response%token)
+    print *, 'URL:', trim(response%url)
     print *, ''
 
     delete_response = deleteFile(response%token)

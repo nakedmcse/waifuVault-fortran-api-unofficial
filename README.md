@@ -139,6 +139,34 @@ print *, 'Token:', trim(response%token)
 print *, 'URL:', trim(response%url)
 ```
 
+Using a buffer:
+
+```fortran
+type(file_upload) :: buffer_upload
+type(file_response) :: response
+integer :: iostatus
+
+buffer_upload%filename = 'RoryMercuryFromBuffer.png'
+buffer_upload%url = ''  !IMPORTANT to init url empty
+buffer_upload%expires = '10m'
+buffer_upload%password = ''
+buffer_upload%hideFilename = .false.
+buffer_upload%oneTimeDownload = .false.
+
+open(unit=10, file='RoryMercury.png', form='unformatted', access='stream', action='read', iostat=iostatus)
+inquire(unit=10, size=buffer_upload%buffer_size)
+allocate(character(len=buffer_upload%buffer_size) :: buffer_upload%buffer)
+read(10, iostat=iostatus) buffer_upload%buffer
+
+response = uploadFile(buffer_upload)
+close(10)
+deallocate(buffer_upload%buffer)
+print *, '--File Upload Response Object--'
+print *, 'Token:', trim(response%token)
+print *, 'URL:', trim(response%url)
+print *, ''
+```
+
 ### Get File Info<a id="get-file-info"></a>
 
 If you have a token from your upload. Then you can get file info. This results in the following info:

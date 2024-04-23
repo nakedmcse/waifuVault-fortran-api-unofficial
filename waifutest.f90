@@ -14,6 +14,7 @@ program test_waifuvault
     integer :: iostatus
     logical :: delete_response
 
+    ! Object Tests
     call url_upload%create_upload('https://somesite/somefile.png', '1d', 'somepassword', .true., .true.)
 
     built_url = url_upload%build_url()
@@ -44,25 +45,6 @@ program test_waifuvault
     print *, ''
 
     call openCurl()
-    response = fileInfo('a7db7d50-7fd4-45cc-8f53-f0dee4a6fa9f', .true.)
-    print *, '--FileInfo Response Object--'
-    print *, 'Token:', trim(response%token)
-    print *, 'URL:', trim(response%url)
-    print *, 'Retention:', trim(response%retentionPeriod)
-    print *, 'Options/hideFilename:', response%options%hideFilename
-    print *, 'Options/oneTimeDownload:', response%options%oneTimeDownload
-    print *, 'Options/protected:', response%options%protected
-    print *, ''
-    call getError(error)
-    print *, '--Error Object--'
-    print *, 'Name:', trim(error%name)
-    print *, 'Status:', error%status
-    print *, 'Message:', trim(error%message)
-    print *, ''
-
-    call getFile(response, filebuffer, '')
-    print *, '--Download File--'
-    print *, 'Size: ', len_trim(filebuffer%content)
 
     response = fileInfo('balls', .true.)
     print *, '--FileInfo Response Object--'
@@ -79,13 +61,16 @@ program test_waifuvault
     print *, 'Status:', error%status
     print *, 'Message:', trim(error%message)
     print *, ''
+    call sleep(1)
 
+    ! URL Upload
     call url_upload%create_upload('https://waifuvault.moe/assets/custom/images/08.png', '10m', '', .false., .false.)
     response = uploadFile(url_upload)
     print *, '--URL Upload Response Object--'
     print *, 'Token:', trim(response%token)
     print *, 'URL:', trim(response%url)
     print *, ''
+    call sleep(1)
 
     response = fileInfo(response%token, .true.)
     print *, '--FileInfo Response Object--'
@@ -96,12 +81,21 @@ program test_waifuvault
     print *, 'Options/oneTimeDownload:', response%options%oneTimeDownload
     print *, 'Options/protected:', response%options%protected
     print *, ''
+    call sleep(1)
+
+    call getFile(response, filebuffer, '')
+    print *, '--Download File--'
+    print *, 'Size: ', len_trim(filebuffer%content)
+    print *, ''
+    call sleep(1)
 
     delete_response = deleteFile(response%token)
     print *, '--Delete File Response--'
     print *, 'Response:', delete_response
     print *, ''
+    call sleep(1)
 
+    ! File Upload
     call realfile_upload%create_upload('~/Downloads/rider3.png', '10m', '', .false., .false.)
     response = uploadFile(realfile_upload)
     print *, '--File Upload Response Object--'
@@ -114,6 +108,7 @@ program test_waifuvault
     print *, 'Status:', error%status
     print *, 'Message:', trim(error%message)
     print *, ''
+    call sleep(1)
 
     response = fileInfo(response%token, .true.)
     print *, '--FileInfo Response Object--'
@@ -124,6 +119,7 @@ program test_waifuvault
     print *, 'Options/oneTimeDownload:', response%options%oneTimeDownload
     print *, 'Options/protected:', response%options%protected
     print *, ''
+    call sleep(1)
 
     response = fileUpdate(response%token, '', '', '1h', .false.)
     print *, '--FileUpdate Response Object--'
@@ -134,11 +130,14 @@ program test_waifuvault
     print *, 'Options/oneTimeDownload:', response%options%oneTimeDownload
     print *, 'Options/protected:', response%options%protected
     print *, ''
+    call sleep(1)
 
     delete_response = deleteFile(response%token)
     print *, '--Delete File Response--'
     print *, 'Response:', delete_response
+    call sleep(1)
 
+    ! Buffer Upload
     buffer_upload%filename = 'RoryMercuryFromBuffer.png'
     buffer_upload%url = ''  !IMPORTANT to init url empty
     buffer_upload%expires = '10m'
@@ -158,10 +157,12 @@ program test_waifuvault
     print *, 'Token:', trim(response%token)
     print *, 'URL:', trim(response%url)
     print *, ''
+    call sleep(1)
 
     delete_response = deleteFile(response%token)
     print *, '--Delete File Response--'
     print *, 'Response:', delete_response
+    call sleep(1)
 
     call closeCurl()
 

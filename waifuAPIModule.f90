@@ -127,6 +127,7 @@ module waifuvault_api
 
             call checkError(rc, body%content)
             res = deserializeResponse(body%content)
+            deallocate(body%content)
         end function uploadFile
 
         function fileInfo(token, formatted) result (res)
@@ -156,6 +157,7 @@ module waifuvault_api
             rc = curl_easy_perform(curl_ptr)
             call checkError(rc, body%content)
             res = deserializeResponse(body%content)
+            deallocate(body%content)
         end function fileInfo
 
         function fileUpdate(token, password, previous_password, custom_expiry, hide_filename) result (res)
@@ -205,6 +207,7 @@ module waifuvault_api
 
             call checkError(rc, body%content)
             res = deserializeResponse(body%content)
+            deallocate(body%content)
         end function fileUpdate
 
         function deleteFile(token) result (res)
@@ -231,6 +234,7 @@ module waifuvault_api
             else
                 res = .false.
             end if
+            deallocate(body%content)
         end function deleteFile
 
         subroutine getFile(fileObj, buffer, password)

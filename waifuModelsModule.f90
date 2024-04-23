@@ -80,7 +80,7 @@ module waifuvault_models
             class(file_upload) :: this
             integer :: len
             character(len=512) :: res
-            res = 'https://waifuvault.walker.moe/rest?'
+            res = 'https://waifuvault.moe/rest?'
             if(len_trim(this%password)>0) then
                 res = trim(res) // 'password=' // trim(this%password) // '&'
             end if

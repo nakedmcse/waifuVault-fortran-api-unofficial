@@ -164,7 +164,6 @@ deallocate(buffer_upload%buffer)
 print *, '--File Upload Response Object--'
 print *, 'Token:', trim(response%token)
 print *, 'URL:', trim(response%url)
-print *, ''
 ```
 
 ### Get File Info<a id="get-file-info"></a>

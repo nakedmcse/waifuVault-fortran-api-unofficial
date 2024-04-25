@@ -37,6 +37,29 @@ module waifuvault_api
             ret_error%message = error%message
         end subroutine getError
 
+        subroutine dispatch_curl(rc, request_type, url, headers, body, fields)
+            character(len=*) :: request_type, url
+            character(len=*), target :: fields
+            type(response_type), target :: body
+            type(c_ptr) :: headers
+            integer :: rc
+
+            curl_ptr = curl_easy_init()
+            rc = curl_easy_setopt(curl_ptr, CURLOPT_URL, url)
+            rc = curl_easy_setopt(curl_ptr, CURLOPT_CUSTOMREQUEST, request_type)
+            rc = curl_easy_setopt(curl_ptr, CURLOPT_FOLLOWLOCATION, 1)
+            rc = curl_easy_setopt(curl_ptr, CURLOPT_WRITEFUNCTION, c_funloc(response_callback))
+            rc = curl_easy_setopt(curl_ptr, CURLOPT_WRITEDATA, c_loc(body))
+            if (.not. c_associated(headers,c_null_ptr)) then
+                rc = curl_easy_setopt(curl_ptr, CURLOPT_HTTPHEADER, headers)
+            end if
+            if (len_trim(fields) > 0) then
+                rc = curl_easy_setopt(curl_ptr, CURLOPT_POSTFIELDS, c_loc(fields))
+                rc = curl_easy_setopt(curl_ptr, CURLOPT_POSTFIELDSIZE, len(fields))
+            end if
+            rc = curl_easy_perform(curl_ptr)
+        end subroutine dispatch_curl
+
         function uploadFile(fileObj) result (res)
             type(file_upload) :: fileObj
             type(file_response) :: res
@@ -49,19 +72,11 @@ module waifuvault_api
             integer :: rc, iostatus, filesize
 
             target_url = fileObj%build_url()
-            curl_ptr = curl_easy_init()
             if (len_trim(fileObj%url) > 0) then
                 ! URL Upload
                 fields = 'url='
                 fields = trim(fields) // curl_easy_escape(curl_ptr, trim(fileObj%url), len_trim(fileObj%url))
-                rc = curl_easy_setopt(curl_ptr, CURLOPT_URL, trim(target_url))
-                rc = curl_easy_setopt(curl_ptr, CURLOPT_CUSTOMREQUEST, 'PUT')
-                rc = curl_easy_setopt(curl_ptr, CURLOPT_FOLLOWLOCATION, 1)
-                rc = curl_easy_setopt(curl_ptr, CURLOPT_WRITEFUNCTION, c_funloc(response_callback))
-                rc = curl_easy_setopt(curl_ptr, CURLOPT_WRITEDATA, c_loc(body))
-                rc = curl_easy_setopt(curl_ptr, CURLOPT_POSTFIELDS, c_loc(fields))
-                rc = curl_easy_setopt(curl_ptr, CURLOPT_POSTFIELDSIZE, len(fields))
-                rc = curl_easy_perform(curl_ptr)
+                call dispatch_curl(rc, 'PUT', trim(target_url), c_null_ptr, body, fields)
             elseif (len_trim(fileObj%filename) > 0 .and. .not. allocated(fileObj%buffer)) then
                 ! File Upload
                 call expandHomedir(trim(fileObj%filename), fullfilename)
@@ -82,15 +97,7 @@ module waifuvault_api
                 headers = c_null_ptr
                 headers = curl_slist_append(headers, ('Content-Type: multipart/form-data; boundary="'  &
                         // seperator // '"'))
-                rc = curl_easy_setopt(curl_ptr, CURLOPT_URL, trim(target_url))
-                rc = curl_easy_setopt(curl_ptr, CURLOPT_HTTPHEADER, headers)
-                rc = curl_easy_setopt(curl_ptr, CURLOPT_CUSTOMREQUEST, 'PUT')
-                rc = curl_easy_setopt(curl_ptr, CURLOPT_FOLLOWLOCATION, 1)
-                rc = curl_easy_setopt(curl_ptr, CURLOPT_WRITEFUNCTION, c_funloc(response_callback))
-                rc = curl_easy_setopt(curl_ptr, CURLOPT_WRITEDATA, c_loc(body))
-                rc = curl_easy_setopt(curl_ptr, CURLOPT_POSTFIELDS, c_loc(fields))
-                rc = curl_easy_setopt(curl_ptr, CURLOPT_POSTFIELDSIZE, len(fields))
-                rc = curl_easy_perform(curl_ptr)
+                call dispatch_curl(rc, 'PUT', trim(target_url), headers, body, fields)
                 call curl_slist_free_all(headers)
                 deallocate(filebuffer)
                 close(10)
@@ -113,15 +120,7 @@ module waifuvault_api
                 headers = c_null_ptr
                 headers = curl_slist_append(headers, ('Content-Type: multipart/form-data; boundary="'  &
                         // seperator // '"'))
-                rc = curl_easy_setopt(curl_ptr, CURLOPT_URL, trim(target_url))
-                rc = curl_easy_setopt(curl_ptr, CURLOPT_HTTPHEADER, headers)
-                rc = curl_easy_setopt(curl_ptr, CURLOPT_CUSTOMREQUEST, 'PUT')
-                rc = curl_easy_setopt(curl_ptr, CURLOPT_FOLLOWLOCATION, 1)
-                rc = curl_easy_setopt(curl_ptr, CURLOPT_WRITEFUNCTION, c_funloc(response_callback))
-                rc = curl_easy_setopt(curl_ptr, CURLOPT_WRITEDATA, c_loc(body))
-                rc = curl_easy_setopt(curl_ptr, CURLOPT_POSTFIELDS, c_loc(fields))
-                rc = curl_easy_setopt(curl_ptr, CURLOPT_POSTFIELDSIZE, len(fields))
-                rc = curl_easy_perform(curl_ptr)
+                call dispatch_curl(rc, 'PUT', trim(target_url), headers, body, fields)
                 call curl_slist_free_all(headers)
             end if
 
@@ -148,13 +147,7 @@ module waifuvault_api
                 url = trim(url) // 'false'
             end if
 
-            curl_ptr = curl_easy_init()
-            rc = curl_easy_setopt(curl_ptr, CURLOPT_URL, trim(url))
-            rc = curl_easy_setopt(curl_ptr, CURLOPT_HTTPGET, 1)
-            rc = curl_easy_setopt(curl_ptr, CURLOPT_FOLLOWLOCATION, 1)
-            rc = curl_easy_setopt(curl_ptr, CURLOPT_WRITEFUNCTION, c_funloc(response_callback))
-            rc = curl_easy_setopt(curl_ptr, CURLOPT_WRITEDATA, c_loc(body))
-            rc = curl_easy_perform(curl_ptr)
+            call dispatch_curl(rc, 'GET', trim(url), c_null_ptr, body, '')
             call checkError(rc, body%content)
             res = deserializeResponse(body%content)
             deallocate(body%content)
@@ -172,9 +165,8 @@ module waifuvault_api
 
             url = ''
             url = trim(BASEURL) // '/' // trim(token)
-            curl_ptr = curl_easy_init()
+
             headers = curl_slist_append(headers, 'Content-Type: application/json; charset=utf-8')
-            rc = curl_easy_setopt(curl_ptr, CURLOPT_HTTPHEADER, headers)
 
             fields = ''
             fields = trim(fields) // '{"password":"'
@@ -197,14 +189,7 @@ module waifuvault_api
             end if
             fields = trim(fields) // '}'
 
-            rc = curl_easy_setopt(curl_ptr, CURLOPT_URL, trim(url))
-            rc = curl_easy_setopt(curl_ptr, CURLOPT_CUSTOMREQUEST, 'PATCH')
-            rc = curl_easy_setopt(curl_ptr, CURLOPT_FOLLOWLOCATION, 1)
-            rc = curl_easy_setopt(curl_ptr, CURLOPT_WRITEFUNCTION, c_funloc(response_callback))
-            rc = curl_easy_setopt(curl_ptr, CURLOPT_WRITEDATA, c_loc(body))
-            rc = curl_easy_setopt(curl_ptr, CURLOPT_POSTFIELDS, c_loc(fields))
-            rc = curl_easy_perform(curl_ptr)
-
+            call dispatch_curl(rc, 'PATCH', trim(url), headers, body, fields)
             call checkError(rc, body%content)
             res = deserializeResponse(body%content)
             deallocate(body%content)
@@ -220,13 +205,7 @@ module waifuvault_api
             url = ''
             url = trim(BASEURL) // '/' // trim(token)
 
-            curl_ptr = curl_easy_init()
-            rc = curl_easy_setopt(curl_ptr, CURLOPT_URL, trim(url))
-            rc = curl_easy_setopt(curl_ptr, CURLOPT_CUSTOMREQUEST, 'DELETE')
-            rc = curl_easy_setopt(curl_ptr, CURLOPT_FOLLOWLOCATION, 1)
-            rc = curl_easy_setopt(curl_ptr, CURLOPT_WRITEFUNCTION, c_funloc(response_callback))
-            rc = curl_easy_setopt(curl_ptr, CURLOPT_WRITEDATA, c_loc(body))
-            rc = curl_easy_perform(curl_ptr)
+            call dispatch_curl(rc, 'DELETE', trim(url), c_null_ptr, body, '')
             call checkError(rc, body%content)
 
             if (body%content(1:4) == 'true') then
@@ -252,14 +231,10 @@ module waifuvault_api
             curl_ptr = curl_easy_init()
             if (len_trim(password)>0) then
                 headers = curl_slist_append(headers, ('x-password: ' // password))
-                rc = curl_easy_setopt(curl_ptr, CURLOPT_HTTPHEADER, headers)
+                call dispatch_curl(rc, 'GET', trim(fileObj%url), headers, buffer, '')
+            else
+                call dispatch_curl(rc, 'GET', trim(fileObj%url), c_null_ptr, buffer, '')
             end if
-            rc = curl_easy_setopt(curl_ptr, CURLOPT_URL, trim(fileObj%url))
-            rc = curl_easy_setopt(curl_ptr, CURLOPT_HTTPGET, 1)
-            rc = curl_easy_setopt(curl_ptr, CURLOPT_FOLLOWLOCATION, 1)
-            rc = curl_easy_setopt(curl_ptr, CURLOPT_WRITEFUNCTION, c_funloc(response_callback))
-            rc = curl_easy_setopt(curl_ptr, CURLOPT_WRITEDATA, c_loc(buffer))
-            rc = curl_easy_perform(curl_ptr)
             call checkError(rc, buffer%content)
             if (len_trim(password)>0) then
                 call curl_slist_free_all(headers)

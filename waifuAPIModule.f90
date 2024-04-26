@@ -86,6 +86,7 @@ module waifuvault_api
                 stringsize = adjustl(stringsize)
                 allocate(character(len=filesize) :: filebuffer)
                 read(10, iostat=iostatus) filebuffer
+                close(10)
                 seperator = '-----' // trim(stringsize) // '-----'
                 fields = '--' // seperator // achar(13) // achar(10) &
                     // 'Content-Disposition: form-data; name="file"; filename="' // basename(fullfilename) &
@@ -100,7 +101,6 @@ module waifuvault_api
                 call dispatch_curl(rc, 'PUT', trim(target_url), headers, body, fields)
                 call curl_slist_free_all(headers)
                 deallocate(filebuffer)
-                close(10)
             else
                 ! Buffer Upload
                 filesize = len(fileObj%buffer)
@@ -134,10 +134,8 @@ module waifuvault_api
             type(response_type), target :: body
             character(len=*) :: token
             character(len=512) :: url
-            character(len=:), allocatable :: splits(:)
-            character(len=:), allocatable :: cleaned
             logical :: formatted
-            integer :: rc,i
+            integer :: rc
 
             url = ''
             url = trim(BASEURL) // '/' // trim(token) // '?formatted='

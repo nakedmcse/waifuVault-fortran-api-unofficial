@@ -89,7 +89,7 @@ module waifuvault_api
                 close(10)
                 seperator = '-----' // trim(stringsize) // '-----'
                 fields = '--' // seperator // achar(13) // achar(10) &
-                    // 'Content-Disposition: form-data; name="file"; filename="' // basename(fullfilename) &
+                    // 'Content-Disposition: form-data; name="file"; filename="' // trim(basename(fullfilename)) &
                     // '"' // achar(13) // achar(10) &
                     // 'Content-Length: ' // trim(stringsize) // achar(13) // achar(10)  &
                     // 'Content-Type: octet-stream' // achar(13) // achar(10) // 'Content-Transfer-Encoding: binary' &

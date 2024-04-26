@@ -2,7 +2,7 @@
 module waifuvault_models
     implicit none
     ! file_upload
-    type file_upload
+    type, public :: file_upload
         character(len=512) :: filename
         character(len=512) :: url
         character(len=:), allocatable :: buffer
@@ -17,7 +17,7 @@ module waifuvault_models
     end type file_upload
 
     ! file_options
-    type file_options
+    type, public :: file_options
         logical :: hideFilename
         logical :: oneTimeDownload
         logical :: protected
@@ -26,7 +26,7 @@ module waifuvault_models
     end type file_options
 
     ! file_response
-    type file_response
+    type, public :: file_response
         character(len=80) :: token
         character(len=512) :: url
         character(len=80) :: retentionPeriod
@@ -36,19 +36,13 @@ module waifuvault_models
     end type file_response
 
     ! ErrorResponse
-    type error_response
+    type, public :: error_response
         character(len=80) :: name
         integer :: status
         character(len=4096) :: message
         contains
         procedure :: create_error_response
     end type error_response
-
-    ! MemoryStream
-    type memory_stream
-        character, allocatable :: buffer(:)
-        integer :: buffer_size
-    end type memory_stream
 
     contains
 

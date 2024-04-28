@@ -11,11 +11,7 @@ module waifuvault_utils
     function stringToLogical(input) result (res)
         character(len=*) :: input
         logical :: res
-        if(input == 'true') then
-            res = .true.
-        else
-            res = .false.
-        end if
+        res = input == 'true'
     end function stringToLogical
 
     function basename(path)
@@ -41,11 +37,7 @@ module waifuvault_utils
 
         call getHomeDirectory(home, status)
 
-        if (path(1:1) == '~' .and. status == 0) then
-            result = trim(home) // path(2:)
-        else
-            result = path
-        end if
+        result = merge(trim(home) // path(2:), path, (path(1:1) == '~' .and. status == 0))
     end subroutine expandHomedir
 
     subroutine getHomeDirectory(home, status)

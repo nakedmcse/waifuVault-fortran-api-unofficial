@@ -140,11 +140,7 @@ module waifuvault_api
 
             url = ''
             url = trim(BASEURL) // '/' // trim(token) // '?formatted='
-            if (formatted .eqv. .true.) then
-                url = trim(url) // 'true'
-            else
-                url = trim(url) // 'false'
-            end if
+            url = merge(trim(url) // 'true', trim(url) // 'false', formatted)
 
             call dispatch_curl(rc, 'GET', trim(url), c_null_ptr, body, '')
             call checkError(rc, body%content)
@@ -181,14 +177,10 @@ module waifuvault_api
                 fields = trim(fields) // custom_expiry
             end if
             fields = trim(fields) // '","hideFilename":'
-            if (hide_filename .eqv. .true.) then
-                fields = trim(fields) // 'true'
-            else
-                fields = trim(fields) // 'false'
-            end if
+            fields = merge(trim(fields) // 'true ', trim(fields) // 'false', hide_filename)
             fields = trim(fields) // '}'
 
-            call dispatch_curl(rc, 'PATCH', trim(url), headers, body, fields)
+            call dispatch_curl(rc, 'PATCH', trim(url), headers, body, trim(fields))
             call checkError(rc, body%content)
             res = deserializeResponse(body%content)
             deallocate(body%content)
@@ -207,11 +199,7 @@ module waifuvault_api
             call dispatch_curl(rc, 'DELETE', trim(url), c_null_ptr, body, '')
             call checkError(rc, body%content)
 
-            if (body%content(1:4) == 'true') then
-                res = .true.
-            else
-                res = .false.
-            end if
+            res = body%content(1:4) == 'true'
             deallocate(body%content)
         end function deleteFile
 

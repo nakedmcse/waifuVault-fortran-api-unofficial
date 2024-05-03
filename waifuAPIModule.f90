@@ -77,6 +77,12 @@ module waifuvault_api
                 ! URL Upload
                 fields = 'url='
                 fields = trim(fields) // curl_easy_escape(curl_ptr, trim(fileObj%url), len_trim(fileObj%url))
+
+                if (len_trim(fileObj%password) > 0) then
+                    fields = trim(fields) // '&password=' &
+                     // curl_easy_escape(curl_ptr, trim(fileObj%password), len_trim(fileObj%password))
+                end if
+
                 call dispatch_curl(rc, 'PUT', trim(target_url), c_null_ptr, body, fields)
             elseif (len_trim(fileObj%filename) > 0 .and. .not. allocated(fileObj%buffer)) then
                 ! File Upload
@@ -95,7 +101,17 @@ module waifuvault_api
                     // 'Content-Length: ' // trim(stringsize) // achar(13) // achar(10)  &
                     // 'Content-Type: octet-stream' // achar(13) // achar(10) // 'Content-Transfer-Encoding: binary' &
                     // achar(13) // achar(10) &
-                    // achar(13) // achar(10) // filebuffer // achar(13) // achar(10) // '--' // seperator // '--'
+                    // achar(13) // achar(10) // filebuffer // achar(13) // achar(10)
+
+                if (len_trim(fileObj%password) > 0) then
+                    fields = fields // '--' // seperator // achar(13) // achar(10) &
+                    // 'Content-Disposition: form-data; name="password"' // achar(13) // achar(10) &
+                    // 'Content-Type: text/plain' // achar(13) // achar(10) &
+                    // achar(13) // achar(10) // trim(fileObj%password) // achar(13) // achar(10)
+                endif
+
+                fields = fields // '--' // seperator // '--'
+
                 headers = c_null_ptr
                 headers = curl_slist_append(headers, ('Content-Type: multipart/form-data; boundary="'  &
                         // seperator // '"'))
@@ -116,8 +132,17 @@ module waifuvault_api
                         // 'Content-Type: octet-stream' // achar(13) // achar(10) &
                         // 'Content-Transfer-Encoding: binary' &
                         // achar(13) // achar(10) &
-                        // achar(13) // achar(10) // fileObj%buffer // achar(13) // achar(10) // '--' &
-                        // seperator // '--'
+                        // achar(13) // achar(10) // fileObj%buffer // achar(13) // achar(10)
+
+                if (len_trim(fileObj%password) > 0) then
+                    fields = fields // '--' // seperator // achar(13) // achar(10) &
+                            // 'Content-Disposition: form-data; name="password"' // achar(13) // achar(10) &
+                            // 'Content-Type: text/plain' // achar(13) // achar(10) &
+                            // achar(13) // achar(10) // trim(fileObj%password) // achar(13) // achar(10)
+                endif
+
+                fields = fields // '--' // seperator // '--'
+
                 headers = c_null_ptr
                 headers = curl_slist_append(headers, ('Content-Type: multipart/form-data; boundary="'  &
                         // seperator // '"'))

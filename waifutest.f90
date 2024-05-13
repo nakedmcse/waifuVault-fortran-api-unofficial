@@ -64,7 +64,7 @@ program test_waifuvault
     call sleep(1)
 
     ! URL Upload
-    call url_upload%create_upload('https://waifuvault.moe/assets/custom/images/08.png', '10m', '', .false., .false.)
+    call url_upload%create_upload('https://waifuvault.moe/assets/custom/images/08.png', '10m', 'dangerWaifu', .false., .false.)
     response = uploadFile(url_upload)
     print *, '--URL Upload Response Object--'
     print *, 'Token:', trim(response%token)
@@ -83,7 +83,7 @@ program test_waifuvault
     print *, ''
     call sleep(1)
 
-    call getFile(response, filebuffer, '')
+    call getFile(response, filebuffer, 'dangerWaifu')
     print *, '--Download File--'
     print *, 'Size: ', len_trim(filebuffer%content)
     print *, ''
@@ -141,7 +141,7 @@ program test_waifuvault
     buffer_upload%filename = 'RoryMercuryFromBuffer.png'
     buffer_upload%url = ''  !IMPORTANT to init url empty
     buffer_upload%expires = '10m'
-    buffer_upload%password = ''
+    buffer_upload%password = 'dangerWaifu'
     buffer_upload%hideFilename = .false.
     buffer_upload%oneTimeDownload = .false.
 

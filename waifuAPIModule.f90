@@ -94,19 +94,11 @@ module waifuvault_api
                 read(10, iostat=iostatus) filebuffer
                 close(10)
                 seperator = '-----' // trim(stringsize) // '-----'
-                fields = '--' // seperator // achar(13) // achar(10) &
-                    // 'Content-Disposition: form-data; name="file"; filename="' // trim(basename(fullfilename)) &
-                    // '"' // achar(13) // achar(10) &
-                    // 'Content-Length: ' // trim(stringsize) // achar(13) // achar(10)  &
-                    // 'Content-Type: octet-stream' // achar(13) // achar(10) // 'Content-Transfer-Encoding: binary' &
-                    // achar(13) // achar(10) &
-                    // achar(13) // achar(10) // filebuffer // achar(13) // achar(10)
+                fields = trim(MIMEFile(seperator, trim(basename(fullfilename)), stringsize)) &
+                        // achar(13) // achar(10) // filebuffer // achar(13) // achar(10)
 
                 if (len_trim(fileObj%password) > 0) then
-                    fields = fields // '--' // seperator // achar(13) // achar(10) &
-                    // 'Content-Disposition: form-data; name="password"' // achar(13) // achar(10) &
-                    // 'Content-Type: text/plain' // achar(13) // achar(10) &
-                    // achar(13) // achar(10) // trim(fileObj%password) // achar(13) // achar(10)
+                    fields = fields // trim(MIMEPassword(seperator, fileObj%password))
                 endif
 
                 fields = fields // '--' // seperator // '--'
@@ -123,21 +115,11 @@ module waifuvault_api
                 write(stringsize, '(I32)') filesize
                 stringsize = adjustl(stringsize)
                 seperator = '-----' // trim(stringsize) // '-----'
-                fields = '--' // seperator // achar(13) // achar(10) &
-                        // 'Content-Disposition: form-data; name="file"; filename="' &
-                        // trim(fileObj%filename) &
-                        // '"' // achar(13) // achar(10) &
-                        // 'Content-Length: ' // trim(stringsize) // achar(13) // achar(10)  &
-                        // 'Content-Type: octet-stream' // achar(13) // achar(10) &
-                        // 'Content-Transfer-Encoding: binary' &
-                        // achar(13) // achar(10) &
+                fields = trim(MIMEFile(seperator, fileObj%filename, stringsize)) &
                         // achar(13) // achar(10) // fileObj%buffer // achar(13) // achar(10)
 
                 if (len_trim(fileObj%password) > 0) then
-                    fields = fields // '--' // seperator // achar(13) // achar(10) &
-                            // 'Content-Disposition: form-data; name="password"' // achar(13) // achar(10) &
-                            // 'Content-Type: text/plain' // achar(13) // achar(10) &
-                            // achar(13) // achar(10) // trim(fileObj%password) // achar(13) // achar(10)
+                    fields = fields // trim(MIMEPassword(seperator, fileObj%password))
                 endif
 
                 fields = fields // '--' // seperator // '--'
@@ -311,4 +293,25 @@ module waifuvault_api
             end do
             res%options = options
         end function deserializeResponse
+
+        function MIMEFile(seperator, filename, stringsize) result (res)
+            character(len=*) :: seperator, filename, stringsize
+            character(len=1024) :: res
+            res = '--' // seperator // achar(13) // achar(10) &
+                    // 'Content-Disposition: form-data; name="file"; filename="' // trim(filename) &
+                    // '"' // achar(13) // achar(10) &
+                    // 'Content-Length: ' // trim(stringsize) // achar(13) // achar(10)  &
+                    // 'Content-Type: octet-stream' // achar(13) // achar(10) // 'Content-Transfer-Encoding: binary' &
+                    // achar(13) // achar(10) &
+                    // achar(13) // achar(10)
+        end function MIMEFile
+
+        function MIMEPassword(seperator, password) result (res)
+            character(len=*) :: seperator, password
+            character(len=1024) :: res
+            res = '--' // seperator // achar(13) // achar(10) &
+                    // 'Content-Disposition: form-data; name="password"' // achar(13) // achar(10) &
+                    // 'Content-Type: text/plain' // achar(13) // achar(10) &
+                    // achar(13) // achar(10) // trim(password) // achar(13) // achar(10)
+        end function MIMEPassword
 end module

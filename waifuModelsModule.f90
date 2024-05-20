@@ -48,9 +48,7 @@ module waifuvault_models
 
         subroutine create_upload(this, target, expires, password, hide_filename, one_time_download)
             class(file_upload) :: this
-            character(len=*) :: target
-            character(len=*) :: expires
-            character(len=*) :: password
+            character(len=*) :: target, expires, password
             logical :: hide_filename, one_time_download
 
             this%url = ''
@@ -101,8 +99,7 @@ module waifuvault_models
 
         subroutine create_response(this, token, url, retention, options)
             class(file_response) :: this
-            character(len=*) :: token, retention
-            character(len=*) :: url
+            character(len=*) :: token, retention, url
             type(file_options) :: options
 
             this%token = ''
@@ -117,9 +114,8 @@ module waifuvault_models
 
         subroutine create_error_response(this, name, status, message)
             class(error_response) :: this
-            character(len=*) :: name
+            character(len=*) :: name, message
             integer :: status
-            character(len=*) :: message
 
             this%name = ''
             this%message = ''

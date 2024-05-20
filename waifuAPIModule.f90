@@ -68,8 +68,7 @@ module waifuvault_api
             type(c_ptr) :: headers = c_null_ptr
             character(len=512) :: target_url, stringsize
             character(len=:), allocatable :: fullfilename
-            character(len=:), allocatable, target :: fields, seperator
-            character(len=:), allocatable, target :: filebuffer
+            character(len=:), allocatable, target :: fields, seperator, filebuffer
             integer :: rc, iostatus, filesize
 
             target_url = fileObj%build_url()
@@ -255,9 +254,7 @@ module waifuvault_api
 
         subroutine checkError(resp_code, body)
             character(len=*) :: body
-            character(len=:), allocatable :: splits(:)
-            character(len=:), allocatable :: vals(:)
-            character(len=:), allocatable :: cleaned
+            character(len=:), allocatable :: splits(:), vals(:), cleaned
             type(error_response) :: ret_error
             integer :: resp_code, p_err, i
 
@@ -287,9 +284,7 @@ module waifuvault_api
 
         function deserializeResponse(body) result (res)
             character(len=*) :: body
-            character(len=:), allocatable :: splits(:)
-            character(len=:), allocatable :: vals(:)
-            character(len=:), allocatable :: cleaned
+            character(len=:), allocatable :: splits(:), vals(:), cleaned
             logical :: string_retention
             type(file_options) :: options
             type(file_response) :: res

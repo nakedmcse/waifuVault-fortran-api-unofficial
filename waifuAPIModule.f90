@@ -12,7 +12,7 @@ module waifuvault_api
     type(error_response) error
     type(c_ptr) curl_ptr
 
-    public :: openCurl, closeCurl, getError, fileInfo, fileUpdate, getFile, uploadFile, deleteFile, response_callback
+    public :: openCurl, closeCurl, getError, fileInfo, fileUpdate, getFile, uploadFile, deleteFile, createBucket, deleteBucket, getBucket, response_callback
     private
 
     contains
@@ -60,6 +60,43 @@ module waifuvault_api
             end if
             rc = curl_easy_perform(curl_ptr)
         end subroutine dispatch_curl
+
+        function createBucket() result (res)
+            type(response_type), target :: body
+            character(len=512) :: url
+            integer :: rc
+            type(bucket_response) :: res
+
+            url = ''
+            url = trim(BASEURL) // '/bucket/create'
+
+            call dispatch_curl(rc, 'GET', trim(url), c_null_ptr, body, '')
+            call checkError(rc, body%content)
+
+            res = deserializeBucketResponse(body%content)
+            deallocate(body%content)
+        end function createBucket
+
+        function deleteBucket(token) result (res)
+            type(response_type), target :: body
+            character(len=*) :: token
+            character(len=512) :: url
+            integer :: rc
+            logical :: res
+
+            url = ''
+            url = trim(BASEURL) // '/bucket/' // trim(token)
+
+            call dispatch_curl(rc, 'DELETE', trim(url), c_null_ptr, body, '')
+            call checkError(rc, body%content)
+
+            res = body%content(1:4) == 'true'
+            deallocate(body%content)
+        end function deleteBucket
+
+        function getBucket(token) result (res)
+            type(bucket_response) :: res
+        end function getBucket
 
         function uploadFile(fileObj) result (res)
             type(file_upload) :: fileObj
@@ -293,6 +330,44 @@ module waifuvault_api
             end do
             res%options = options
         end function deserializeResponse
+
+        function deserializeBucketResponse(body) result (res)
+            character(len=*) :: body
+            character(len=:), allocatable :: splits(:), vals(:), cleaned
+            type(bucket_response) :: res
+            type(file_options) :: options
+            logical :: firstToken
+            integer :: i
+
+            call split_string(trim(body), ',', splits)
+            firstToken = .true.
+            do i = 1, size(splits)
+                cleaned = ''
+                call remove_characters(trim(splits(i)),'"{}',cleaned)
+                call split_string(cleaned, ':', vals)
+                if (vals(1) == 'token' .and. firstToken) then
+                    res%token = trim(vals(2))
+                    firstToken = .false.
+                elseif (vals(1) == 'token') then
+                    ! TODO Implement file extraction
+                elseif (vals(1) == 'url') then
+                    ! TODO Implement file extraction
+                    ! res%url = trim(vals(2)) // ':' // trim(vals(3))
+                elseif (vals(1) == 'retentionPeriod') then
+                    ! TODO Implement file extraction
+                    ! res%retentionPeriod = trim(vals(2))
+                elseif (vals(1) == 'options') then
+                    ! TODO Implement file extraction
+                    ! options%hideFilename = stringToLogical(vals(3))
+                elseif (vals(1) == 'oneTimeDownload') then
+                    ! TODO Implement file extraction
+                    ! options%oneTimeDownload = stringToLogical(vals(2))
+                elseif (vals(1) == 'protected') then
+                    ! TODO Implement file extraction
+                    ! options%protected = stringToLogical(vals(2))
+                end if
+            end do
+        end function deserializeBucketResponse
 
         function MIMEFile(seperator, filename, stringsize) result (res)
             character(len=*) :: seperator, filename, stringsize

@@ -5,6 +5,7 @@ module waifuvault_models
     type, public :: file_upload
         character(len=512) :: filename
         character(len=512) :: url
+        character(len=80) :: bucketToken
         character(len=:), allocatable :: buffer
         integer :: buffer_size
         character(len=10) :: expires
@@ -28,12 +29,19 @@ module waifuvault_models
     ! file_response
     type, public :: file_response
         character(len=80) :: token
+        character(len=80) :: bucket
         character(len=512) :: url
         character(len=80) :: retentionPeriod
         type(file_options) :: options
         contains
         procedure :: create_response
     end type file_response
+
+    ! bucket_response
+    type, public :: bucket_response
+        character(len=80) :: token
+        type(file_response), dimension(100) :: files
+    end type bucket_response
 
     ! ErrorResponse
     type, public :: error_response
@@ -46,12 +54,13 @@ module waifuvault_models
 
     contains
 
-        subroutine create_upload(this, target, expires, password, hide_filename, one_time_download)
+        subroutine create_upload(this, target, bucket, expires, password, hide_filename, one_time_download)
             class(file_upload) :: this
             character(len=*) :: target, expires, password
             logical :: hide_filename, one_time_download
 
             this%url = ''
+            this%bucketToken = ''
             this%filename = ''
             this%expires = ''
             this%password = ''
@@ -62,6 +71,7 @@ module waifuvault_models
                 this%filename = target
             end if
 
+            this%bucketToken = bucket
             this%expires = expires
             this%password = password
             this%hideFilename = hide_filename
@@ -72,7 +82,11 @@ module waifuvault_models
             class(file_upload) :: this
             integer :: len
             character(len=512) :: res
-            res = 'https://waifuvault.moe/rest?'
+            res = 'https://waifuvault.moe/rest'
+            if(len_trim(this%bucketToken)>0) then
+                res = trim(res) // '/' // trim(this%bucketToken)
+            end if
+            res = trim(res) // '?'
             if(len_trim(this%expires)>0) then
                 res = trim(res) // 'expires=' // trim(this%expires) // '&'
             end if
@@ -97,16 +111,19 @@ module waifuvault_models
             this%protected = protected
         end subroutine create_options
 
-        subroutine create_response(this, token, url, retention, options)
+        subroutine create_response(this, token, bucket, url, retention, options)
             class(file_response) :: this
-            character(len=*) :: token, retention, url
+            character(len=*) :: token, bucket, retention, url
             type(file_options) :: options
 
             this%token = ''
+            this%bucket = ''
+            this%bucket = ''
             this%url = ''
             this%retentionPeriod = ''
 
             this%token = token
+            this%bucket = bucket
             this%url = url
             this%retentionPeriod = retention
             this%options = options

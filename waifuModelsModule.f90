@@ -56,7 +56,7 @@ module waifuvault_models
 
         subroutine create_upload(this, target, bucket, expires, password, hide_filename, one_time_download)
             class(file_upload) :: this
-            character(len=*) :: target, expires, password
+            character(len=*) :: target, bucket, expires, password
             logical :: hide_filename, one_time_download
 
             this%url = ''

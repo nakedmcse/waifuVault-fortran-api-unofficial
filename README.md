@@ -71,13 +71,16 @@ end if
 
 ## Usage
 
-This API contains 5 interactions:
+This API contains 8 interactions:
 
 1. [Upload File](#upload-file)
 2. [Get File Info](#get-file-info)
 3. [Update File Info](#update-file-info)
 4. [Delete File](#delete-file)
 5. [Get File](#get-file)
+6. [Create Bucket](#create-bucket)
+7. [Delete Bucket](#delete-bucket)
+8. [Get Bucket](#get-bucket)
 
 You need to include the module files in your code for the package:
 
@@ -106,6 +109,7 @@ To Upload a file, use the `uploadFile` function. This function takes the followi
 | Option            | Type         | Description                                                     | Required       | Extra info                       |
 |-------------------|--------------|-----------------------------------------------------------------|----------------|----------------------------------|
 | `filename`        | `string `    | The path to the file to upload                                  | true if File   | File path                        |
+| `bucketToken`     | `string`     | The token of a bucket to upload the file to                     | false          |                                  |
 | `url`             | `string`     | The URL of the file to target                                   | true if URL    | Filename with extension          |
 | `buffer`          | `byte array` | Byte array containing file to upload                            | true if buffer | Needs filename set also          |
 | `expires`         | `string`     | A string containing a number and a unit (1d = 1day)             | false          | Valid units are `m`, `h` and `d` |
@@ -119,7 +123,7 @@ Using a URL:
 type(file_upload) :: url_upload
 type(file_response) :: response
 
-call url_upload%create_upload('https://waifuvault.moe/assets/custom/images/08.png', '10m', '', .false., .false.)
+call url_upload%create_upload('https://waifuvault.moe/assets/custom/images/08.png', '', '10m', '', .false., .false.)
 response = uploadFile(url_upload)
 print *, '--URL Upload Response Object--'
 print *, 'Token:', trim(response%token)
@@ -132,7 +136,20 @@ Using a file path:
 type(file_upload) :: upload
 type(file_response) :: response
 
-call upload%create_upload('./acoolfile.png', '10m', '', .false., .false.)
+call upload%create_upload('./acoolfile.png', '', '10m', '', .false., .false.)
+response = uploadFile(upload)
+print *, '--File Upload Response Object--'
+print *, 'Token:', trim(response%token)
+print *, 'URL:', trim(response%url)
+```
+
+Using a file path to a bucket:
+
+```fortran
+type(file_upload) :: upload
+type(file_response) :: response
+
+call upload%create_upload('./acoolfile.png', 'some-bucket-token', '10m', '', .false., .false.)
 response = uploadFile(upload)
 print *, '--File Upload Response Object--'
 print *, 'Token:', trim(response%token)
@@ -148,6 +165,7 @@ integer :: iostatus
 
 buffer_upload%filename = 'RoryMercuryFromBuffer.png'
 buffer_upload%url = ''  !IMPORTANT to init url empty
+buffer_upload%bucketToken = ''  !IMPORTANT to init bucket empty
 buffer_upload%expires = '10m'
 buffer_upload%password = ''
 buffer_upload%hideFilename = .false.
@@ -290,4 +308,65 @@ print *, '--Download File--'
 print *, 'Size: ', len(filebuffer%content)
 ! Do something with buffer
 deallocate(filebuffer%content)
+```
+
+### Create Bucket<a id="create-bucket"></a>
+
+Buckets are virtual collections that are linked to your IP and a token. When you create a bucket, you will receive a bucket token that you can use in Get Bucket to get all the files in that bucket
+
+> **NOTE:** Only one bucket is allowed per client IP address, if you call it more than once, it will return the same bucket token
+
+To create a bucket, use the `createBucket` function. This function does not take any arguments.
+
+```fortran
+type(bucket_response) :: response
+
+response = createBucket()
+print *, '--Create Bucket Response--'
+print *, 'Token:', trim(response%token)
+```
+
+### Delete Bucket<a id="delete-bucket"></a>
+
+Deleting a bucket will delete the bucket and all the files it contains.
+
+> **IMPORTANT:**  All contained files will be **DELETED** along with the Bucket!
+
+To delete a bucket, you must call the `deleteBucket` function with the following options as parameters:
+
+| Option      | Type      | Description                       | Required | Extra info        |
+|-------------|-----------|-----------------------------------|----------|-------------------|
+| `token`     | `string`  | The token of the bucket to delete | true     |                   |
+
+> **NOTE:** `deleteBucket` will only ever either return `true` or throw an exception if the token is invalid
+
+```fortran
+logical :: delete_response
+
+delete_response = deleteBucket(response%token)
+print *, '--Delete Bucket Response--'
+print *, 'Response:', delete_response
+```
+
+### Get Bucket<a id="get-bucket"></a>
+
+To get the list of files contained in a bucket, you use the `getBucket` function and supply the token.
+This function takes the following options as parameters:
+
+| Option      | Type      | Description             | Required | Extra info        |
+|-------------|-----------|-------------------------|----------|-------------------|
+| `token`     | `string`  | The token of the bucket | true     |                   |
+
+This will respond with the bucket and all the files the bucket contains.
+
+```fortran
+type(bucket_response) :: get_response
+
+get_response = getBucket(trim(response%token))
+print *, '--Get Bucket Response--'
+print *, 'Token:', trim(get_response%token)
+print *, 'File 1 Token:', trim(get_response%files(1)%token)
+print *, 'File 1 URL:', trim(get_response%files(1)%url)
+print *, 'File 2 Token:', trim(get_response%files(2)%token)
+print *, 'File 2 URL:', trim(get_response%files(2)%url)
 ```

@@ -95,7 +95,23 @@ module waifuvault_api
         end function deleteBucket
 
         function getBucket(token) result (res)
+            character(len=*) :: token
+            character(len=:), allocatable :: url, content
+            type(response_type), target :: body
+            type(c_ptr) :: headers = c_null_ptr
             type(bucket_response) :: res
+            integer :: rc
+
+            url = trim(BASEURL) // '/bucket/get';
+            headers = curl_slist_append(headers, ('Content-Type: application/json'))
+            content = '{"bucket_token": "' // trim(token) // '"}'
+
+            call dispatch_curl(rc, 'POST', url, headers, body, content)
+            call curl_slist_free_all(headers)
+            call checkError(rc, body%content)
+
+            res = deserializeBucketResponse(body%content)
+            deallocate(body%content)
         end function getBucket
 
         function uploadFile(fileObj) result (res)
@@ -337,34 +353,32 @@ module waifuvault_api
             type(bucket_response) :: res
             type(file_options) :: options
             logical :: firstToken
-            integer :: i
+            integer :: i,j
 
             call split_string(trim(body), ',', splits)
+            j = 0
             firstToken = .true.
             do i = 1, size(splits)
                 cleaned = ''
-                call remove_characters(trim(splits(i)),'"{}',cleaned)
+                call remove_characters(trim(splits(i)),'"{}[]',cleaned)
                 call split_string(cleaned, ':', vals)
                 if (vals(1) == 'token' .and. firstToken) then
                     res%token = trim(vals(2))
                     firstToken = .false.
                 elseif (vals(1) == 'token') then
-                    ! TODO Implement file extraction
+                    if(j<100) then
+                        j = j + 1
+                    end if
+                    res%files(j)%token = trim(vals(2))
+                elseif (vals(2) == 'token') then
+                    if(j<100) then
+                        j = j + 1
+                    end if
+                    res%files(j)%token = trim(vals(3))
                 elseif (vals(1) == 'url') then
-                    ! TODO Implement file extraction
-                    ! res%url = trim(vals(2)) // ':' // trim(vals(3))
+                    res%files(j)%url = trim(vals(2)) // ':' // trim(vals(3))
                 elseif (vals(1) == 'retentionPeriod') then
-                    ! TODO Implement file extraction
-                    ! res%retentionPeriod = trim(vals(2))
-                elseif (vals(1) == 'options') then
-                    ! TODO Implement file extraction
-                    ! options%hideFilename = stringToLogical(vals(3))
-                elseif (vals(1) == 'oneTimeDownload') then
-                    ! TODO Implement file extraction
-                    ! options%oneTimeDownload = stringToLogical(vals(2))
-                elseif (vals(1) == 'protected') then
-                    ! TODO Implement file extraction
-                    ! options%protected = stringToLogical(vals(2))
+                    res%files(j)%retentionPeriod = trim(vals(2))
                 end if
             end do
         end function deserializeBucketResponse

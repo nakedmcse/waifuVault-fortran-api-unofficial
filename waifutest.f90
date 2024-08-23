@@ -15,7 +15,7 @@ program test_waifuvault
     logical :: delete_response
 
     ! Object Tests
-    call url_upload%create_upload('https://somesite/somefile.png', '1d', 'somepassword', .true., .true.)
+    call url_upload%create_upload('https://somesite/somefile.png', '', '1d', 'somepassword', .true., .true.)
 
     built_url = url_upload%build_url()
     print *, '--Upload Object Build URL--'
@@ -29,7 +29,7 @@ program test_waifuvault
     print *, 'protected:', options%protected
     print *, ''
 
-    call response%create_response('some-token','https://someurl','1 Day',options)
+    call response%create_response('some-token','','https://someurl','1 Day',options)
     print *, '--Response Object--'
     print *, 'Token:', trim(response%token)
     print *, 'URL:', trim(response%url)
@@ -64,7 +64,7 @@ program test_waifuvault
     call sleep(1)
 
     ! URL Upload
-    call url_upload%create_upload('https://waifuvault.moe/assets/custom/images/08.png', '10m', 'dangerWaifu', .false., .false.)
+    call url_upload%create_upload('https://waifuvault.moe/assets/custom/images/08.png', '', '10m', 'dangerWaifu', .false., .false.)
     response = uploadFile(url_upload)
     print *, '--URL Upload Response Object--'
     print *, 'Token:', trim(response%token)
@@ -96,7 +96,7 @@ program test_waifuvault
     call sleep(1)
 
     ! File Upload
-    call realfile_upload%create_upload('~/Downloads/rider3.png', '10m', '', .false., .false.)
+    call realfile_upload%create_upload('~/Downloads/rider3.png', '', '10m', '', .false., .false.)
     response = uploadFile(realfile_upload)
     print *, '--File Upload Response Object--'
     print *, 'Token:', trim(response%token)

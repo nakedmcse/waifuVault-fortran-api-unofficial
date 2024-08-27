@@ -94,7 +94,7 @@ module waifuvault_api
 
         subroutine checkRestrictions(fileObj)
             type(file_upload) :: fileObj
-            character(len=:), allocatable :: fullfilename, value, filemime
+            character(len=:), allocatable :: fullfilename, value, filemime, ext
             integer :: rc, iostatus, filesize, maxfilesize, i
 
             if (len_trim(fileObj%url) == 0) then
@@ -117,8 +117,8 @@ module waifuvault_api
                             stop "RESTRICTION EXCEPTION: File " // fullfilename // " size greater than server maximum"
                         end if
                     elseif (trim(restrictions%restrictions(i)%type) == "BANNED_MIME_TYPE") then
-                        ! TODO Implement Mime Type Check
-                        filemime = "application/x-dosexec"
+                        ext = extension(trim(fileObj%filename))
+                        filemime = getMime(ext)
                         value = trim(restrictions%restrictions(i)%value)
                         if (index(value, filemime) > 0) then
                             stop "RESTRICTION EXCEPTION: File " // fullfilename // " file type " // filemime // " banned on server"

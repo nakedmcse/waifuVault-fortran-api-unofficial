@@ -21,7 +21,7 @@ program test_waifuvault_restrictions
     call sleep(1)
 
     ! Upload Normal File
-    call realfile_upload%create_upload('~/Downloads/rider3.png', '', '10m', '', .false., .false.)
+    call realfile_upload%create_upload('~/Dropbox/Public/filebundler.exe', '', '10m', '', .false., .false.)
     realfile_response = uploadFile(realfile_upload)
     print *, '--File Upload Response--'
     print *, 'Token:', trim(realfile_response%token)

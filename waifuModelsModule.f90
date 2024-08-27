@@ -43,6 +43,17 @@ module waifuvault_models
         type(file_response), dimension(100) :: files
     end type bucket_response
 
+    ! Restriction
+    type, public :: restriction
+        character(len=80) :: type
+        character(len=512) :: value
+    end type restriction
+
+    ! RestrictionResponse
+    type, public :: restriction_response
+        type(restriction), dimension(100) :: restrictions
+    end type restriction_response
+
     ! ErrorResponse
     type, public :: error_response
         character(len=80) :: name

@@ -71,7 +71,7 @@ end if
 
 ## Usage
 
-This API contains 8 interactions:
+This API contains 10 interactions:
 
 1. [Upload File](#upload-file)
 2. [Get File Info](#get-file-info)
@@ -81,6 +81,8 @@ This API contains 8 interactions:
 6. [Create Bucket](#create-bucket)
 7. [Delete Bucket](#delete-bucket)
 8. [Get Bucket](#get-bucket)
+9. [Get Restrictions](#get-restrictions)
+10. [Clear Restrictions](#clear-restrictions)
 
 You need to include the module files in your code for the package:
 
@@ -116,6 +118,8 @@ To Upload a file, use the `uploadFile` function. This function takes the followi
 | `hideFilename`    | `logical`    | If true, then the uploaded filename won't appear in the URL     | false          | Defaults to `false`              |
 | `password`        | `string`     | If set, then the uploaded file will be encrypted                | false          |                                  |
 | `oneTimeDownload` | `logical`    | if supplied, the file will be deleted as soon as it is accessed | false          |                                  |
+
+> **NOTE:** If you use `GetRestrictions` then server restrictions are checked by the SDK client side *before* upload, and will throw a stop error if they are violated
 
 Using a URL:
 
@@ -369,4 +373,40 @@ print *, 'File 1 Token:', trim(get_response%files(1)%token)
 print *, 'File 1 URL:', trim(get_response%files(1)%url)
 print *, 'File 2 Token:', trim(get_response%files(2)%token)
 print *, 'File 2 URL:', trim(get_response%files(2)%url)
+```
+
+### Get Restrictions<a id="get-restrictions"></a>
+
+To get the list of restrictions applied to the server, you use the `getRestrictions` function.
+
+This will respond with an array of name, value entries describing the restrictions applied to the server.
+
+> **NOTE:** This loads the server restrictions into the SDK and they will be validated client side before attempting to send
+
+```fortran
+type(restriction_response) :: response
+
+! Get Restrictions
+response = getRestrictions()
+print *, '--Get Restrictions Response--'
+print *, 'First Entry:', trim(response%restrictions(1)%type), " ", trim(response%restrictions(1)%value)
+print *, 'Second Entry:', trim(response%restrictions(2)%type), " ", trim(response%restrictions(2)%value)
+print *, 'Third Entry:', trim(response%restrictions(3)%type), " ", trim(response%restrictions(3)%value)
+```
+
+### Clear Restrictions<a id="clear-restrictions"></a>
+
+To clear the loaded restrictions in the SDK, you use the `clearRestrictions` function.
+
+This will remove the loaded restrictions and the SDK will no longer validate client side.
+
+```fortran
+type(restriction_response) :: response
+
+! Clear Restrictions
+response = clearRestrictions()
+print *, '--Clear Restrictions Response--'
+print *, 'First Entry:', trim(response%restrictions(1)%type), " ", trim(response%restrictions(1)%value)
+print *, 'Second Entry:', trim(response%restrictions(2)%type), " ", trim(response%restrictions(2)%value)
+print *, 'Third Entry:', trim(response%restrictions(3)%type), " ", trim(response%restrictions(3)%value)
 ```

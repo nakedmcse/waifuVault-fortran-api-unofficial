@@ -18,3 +18,4 @@ gfortran -cpp -c waifuAPIModule.f90
 ar rcs lib-waifuvault.a httpcallbackModule.o waifuModelsModule.o waifuUtilsModule.o waifuAPIModule.o
 gfortran -o waifutest httpcallbackModule.o waifuModelsModule.o waifuUtilsModule.o waifuAPIModule.o libcurl/libfortran-curl.a waifutest.f90 -lcurl
 gfortran -o waifubuckettest httpcallbackModule.o waifuModelsModule.o waifuUtilsModule.o waifuAPIModule.o libcurl/libfortran-curl.a waifubuckettest.f90 -lcurl
+gfortran -o waifurestrictiontest httpcallbackModule.o waifuModelsModule.o waifuUtilsModule.o waifuAPIModule.o libcurl/libfortran-curl.a waifurestrictiontest.f90 -lcurl

@@ -9,11 +9,12 @@ module waifuvault_api
     use http_callback
     implicit none
 
+    type(restriction_response) restrictions
     type(error_response) error
     type(c_ptr) curl_ptr
 
     public :: openCurl, closeCurl, getError, fileInfo, fileUpdate, getFile, uploadFile, deleteFile, &
-        createBucket, deleteBucket, getBucket, response_callback
+        createBucket, deleteBucket, getBucket, getRestrictions, clearRestrictions, response_callback
     private
 
     contains
@@ -25,6 +26,7 @@ module waifuvault_api
             if (.not. c_associated(curl_ptr)) then
                 stop 'Error: curl init failed'
             end if
+            restrictions = clearRestrictions()
         end subroutine openCurl
 
         subroutine closeCurl()
@@ -61,6 +63,70 @@ module waifuvault_api
             end if
             rc = curl_easy_perform(curl_ptr)
         end subroutine dispatch_curl
+
+        function getRestrictions() result (res)
+            type(response_type), target :: body
+            character(len=512) :: url
+            integer :: rc
+            type(restriction_response) :: res, clear
+
+            url = ''
+            url = trim(BASEURL) // '/resources/restrictions'
+
+            call dispatch_curl(rc, 'GET', trim(url), c_null_ptr, body, '')
+            call checkError(rc, body%content)
+
+            res = deserializeRestrictionResponse(body%content)
+            clear = clearRestrictions()
+            restrictions = res
+            deallocate(body%content)
+        end function getRestrictions
+
+        function clearRestrictions() result (res)
+            type(restriction_response) :: res
+            integer :: i
+            do i = 1, 100
+                restrictions%restrictions(i)%type = ''
+                restrictions%restrictions(i)%value = ''
+            end do
+            res = restrictions
+        end function clearRestrictions
+
+        subroutine checkRestrictions(fileObj)
+            type(file_upload) :: fileObj
+            character(len=:), allocatable :: fullfilename, value, filemime
+            integer :: rc, iostatus, filesize, maxfilesize, i
+
+            if (len_trim(fileObj%url) == 0) then
+                if (len_trim(fileObj%filename) > 0 .and. .not. allocated(fileObj%buffer)) then
+                    ! File
+                    call expandHomedir(trim(fileObj%filename), fullfilename)
+                    open(unit=10, file=fullfilename, form='unformatted', access='stream', action='read', iostat=iostatus)
+                    inquire(unit=10, size=filesize)
+                elseif (allocated(fileObj%buffer)) then
+                    ! Buffer
+                    filesize = len(fileObj%buffer)
+                end if
+
+                do i = 1, 100
+                    if (len_trim(restrictions%restrictions(i)%type) == 0) exit
+                    if (trim(restrictions%restrictions(i)%type) == "MAX_FILE_SIZE") then
+                        value = trim(restrictions%restrictions(i)%value)
+                        read(value, *, iostat=iostatus) maxfilesize
+                        if (filesize > maxfilesize) then
+                            stop "RESTRICTION EXCEPTION: File " // fullfilename // " size greater than server maximum"
+                        end if
+                    elseif (trim(restrictions%restrictions(i)%type) == "BANNED_MIME_TYPE") then
+                        ! TODO Implement Mime Type Check
+                        filemime = "application/x-dosexec"
+                        value = trim(restrictions%restrictions(i)%value)
+                        if (index(value, filemime) > 0) then
+                            stop "RESTRICTION EXCEPTION: File " // fullfilename // " file type " // filemime // " banned on server"
+                        end if
+                    end if
+                end do
+            end if
+        end subroutine checkRestrictions
 
         function createBucket() result (res)
             type(response_type), target :: body
@@ -125,6 +191,7 @@ module waifuvault_api
             character(len=:), allocatable, target :: fields, seperator, filebuffer
             integer :: rc, iostatus, filesize
 
+            call checkRestrictions(fileObj)
             target_url = fileObj%build_url()
             if (len_trim(fileObj%url) > 0) then
                 ! URL Upload
@@ -383,6 +450,31 @@ module waifuvault_api
                 end if
             end do
         end function deserializeBucketResponse
+
+        function deserializeRestrictionResponse(body) result (res)
+            character(len=*) :: body
+            character(len=:), allocatable :: splits(:), vals(:), cleaned
+            type(restriction_response) :: res
+            integer :: i,j
+
+            j = 1
+            call split_string(trim(body), ',', splits)
+            do i = 1, size(splits)
+                cleaned = ''
+                call remove_characters(trim(splits(i)),'"{}[]',cleaned)
+                call split_string(cleaned, ':', vals)
+                if (trim(vals(2)) == "MAX FILE SIZE") then
+                    res%restrictions(j)%type = "MAX_FILE_SIZE"
+                elseif (trim(vals(2)) == "BANNED MIME TYPE") then
+                    res%restrictions(j)%type = "BANNED_MIME_TYPE"
+                elseif (trim(vals(1)) == "value") then
+                    res%restrictions(j)%value = trim(vals(2))
+                    j = j + 1
+                elseif (len_trim(vals(1))>0 .and. trim(res%restrictions(j-1)%type) == "BANNED_MIME_TYPE") then
+                    res%restrictions(j-1)%value = trim(res%restrictions(j-1)%value) // "," // trim(vals(1))
+                end if
+            end do
+        end function deserializeRestrictionResponse
 
         function MIMEFile(seperator, filename, stringsize) result (res)
             character(len=*) :: seperator, filename, stringsize

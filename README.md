@@ -52,7 +52,9 @@ gfortran -o your-code lib-waifuvault.a libcurl/libfortran-curl.a your-code.f90 -
 
 ## Error Handling
 
-After each call to the SDK, you need to use a call to getError to check for any errors during the call.  If it returns status 0, then all was OK.
+After each call to the SDK, you need to use a call to `getError` to check for any errors during the call.  If it returns status 0, then all was OK.
+
+After you have checked the error, you must consume it with a call to `clearError`.
 
 ```fortran
 type(file_response) :: response
@@ -66,6 +68,7 @@ if (error%status /= 0) then
     print *, 'Name:', trim(error%name)
     print *, 'Status:', error%status
     print *, 'Message:', trim(error%message)
+    call clearError()
 end if
 ```
 
@@ -119,19 +122,31 @@ To Upload a file, use the `uploadFile` function. This function takes the followi
 | `password`        | `string`     | If set, then the uploaded file will be encrypted                | false          |                                  |
 | `oneTimeDownload` | `logical`    | if supplied, the file will be deleted as soon as it is accessed | false          |                                  |
 
-> **NOTE:** If you use `GetRestrictions` then server restrictions are checked by the SDK client side *before* upload, and will throw a stop error if they are violated
+> **NOTE:** If you use `GetRestrictions` then server restrictions are checked by the SDK client side *before* upload, and will record an error if they are violated
 
 Using a URL:
 
 ```fortran
 type(file_upload) :: url_upload
 type(file_response) :: response
+type(error_response) :: error
 
 call url_upload%create_upload('https://waifuvault.moe/assets/custom/images/08.png', '', '10m', '', .false., .false.)
 response = uploadFile(url_upload)
-print *, '--URL Upload Response Object--'
-print *, 'Token:', trim(response%token)
-print *, 'URL:', trim(response%url)
+call getError(error)
+if (error%status > 0) then
+    print *, '--Error Object--'
+    print *, 'Name:', trim(error%name)
+    print *, 'Status:', error%status
+    print *, 'Message:', trim(error%message)
+    print *, ''
+    call clearError()
+else
+    print *, '--URL Upload Response--'
+    print *, 'Token:', trim(response%token)
+    print *, 'URL:', trim(response%url)
+    print *, ''
+end if
 ```
 
 Using a file path:
@@ -139,12 +154,24 @@ Using a file path:
 ```fortran
 type(file_upload) :: upload
 type(file_response) :: response
+type(error_response) :: error
 
 call upload%create_upload('./acoolfile.png', '', '10m', '', .false., .false.)
 response = uploadFile(upload)
-print *, '--File Upload Response Object--'
-print *, 'Token:', trim(response%token)
-print *, 'URL:', trim(response%url)
+call getError(error)
+if (error%status > 0) then
+    print *, '--Error Object--'
+    print *, 'Name:', trim(error%name)
+    print *, 'Status:', error%status
+    print *, 'Message:', trim(error%message)
+    print *, ''
+    call clearError()
+else
+    print *, '--File Upload Response--'
+    print *, 'Token:', trim(response%token)
+    print *, 'URL:', trim(response%url)
+    print *, ''
+end if
 ```
 
 Using a file path to a bucket:
@@ -152,12 +179,24 @@ Using a file path to a bucket:
 ```fortran
 type(file_upload) :: upload
 type(file_response) :: response
+type(error_response) :: error
 
 call upload%create_upload('./acoolfile.png', 'some-bucket-token', '10m', '', .false., .false.)
 response = uploadFile(upload)
-print *, '--File Upload Response Object--'
-print *, 'Token:', trim(response%token)
-print *, 'URL:', trim(response%url)
+call getError(error)
+if (error%status > 0) then
+    print *, '--Error Object--'
+    print *, 'Name:', trim(error%name)
+    print *, 'Status:', error%status
+    print *, 'Message:', trim(error%message)
+    print *, ''
+    call clearError()
+else
+    print *, '--File Upload Response--'
+    print *, 'Token:', trim(response%token)
+    print *, 'URL:', trim(response%url)
+    print *, ''
+end if
 ```
 
 Using a buffer:
@@ -165,6 +204,7 @@ Using a buffer:
 ```fortran
 type(file_upload) :: buffer_upload
 type(file_response) :: response
+type(error_response) :: error
 integer :: iostatus
 
 buffer_upload%filename = 'RoryMercuryFromBuffer.png'
@@ -183,9 +223,20 @@ read(10, iostat=iostatus) buffer_upload%buffer
 response = uploadFile(buffer_upload)
 close(10)
 deallocate(buffer_upload%buffer)
-print *, '--File Upload Response Object--'
-print *, 'Token:', trim(response%token)
-print *, 'URL:', trim(response%url)
+call getError(error)
+if (error%status > 0) then
+    print *, '--Error Object--'
+    print *, 'Name:', trim(error%name)
+    print *, 'Status:', error%status
+    print *, 'Message:', trim(error%message)
+    print *, ''
+    call clearError()
+else
+    print *, '--File Upload Response--'
+    print *, 'Token:', trim(response%token)
+    print *, 'URL:', trim(response%url)
+    print *, ''
+end if
 ```
 
 ### Get File Info<a id="get-file-info"></a>

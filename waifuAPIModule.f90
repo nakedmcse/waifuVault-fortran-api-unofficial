@@ -14,7 +14,8 @@ module waifuvault_api
     type(c_ptr) curl_ptr
 
     public :: openCurl, closeCurl, getError, fileInfo, fileUpdate, getFile, uploadFile, deleteFile, &
-        createBucket, deleteBucket, getBucket, getRestrictions, clearRestrictions, response_callback
+        createBucket, deleteBucket, getBucket, getRestrictions, clearRestrictions, response_callback, &
+        clearError
     private
 
     contains
@@ -40,6 +41,14 @@ module waifuvault_api
             ret_error%status = error%status
             ret_error%message = error%message
         end subroutine getError
+
+        subroutine clearError()
+            type(error_response) :: ret_error
+            ret_error%name = ''
+            ret_error%status = 0
+            ret_error%message = ''
+            error = ret_error
+        end subroutine clearError
 
         subroutine dispatch_curl(rc, request_type, url, headers, body, fields)
             character(len=*) :: request_type, url
@@ -94,8 +103,13 @@ module waifuvault_api
 
         subroutine checkRestrictions(fileObj)
             type(file_upload) :: fileObj
+            type(error_response) :: ret_error
             character(len=:), allocatable :: fullfilename, value, filemime, ext
             integer :: rc, iostatus, filesize, maxfilesize, i
+
+            ret_error%name = ''
+            ret_error%status = 0
+            ret_error%message = ''
 
             if (len_trim(fileObj%url) == 0) then
                 if (len_trim(fileObj%filename) > 0 .and. .not. allocated(fileObj%buffer)) then
@@ -114,18 +128,24 @@ module waifuvault_api
                         value = trim(restrictions%restrictions(i)%value)
                         read(value, *, iostat=iostatus) maxfilesize
                         if (filesize > maxfilesize) then
-                            stop "RESTRICTION EXCEPTION: File " // fullfilename // " size greater than server maximum"
+                            ret_error%name = "RESTRICTION EXCEPTION"
+                            ret_error%status = 1
+                            ret_error%message = "File " // fullfilename // " size greater than server maximum"
                         end if
                     elseif (trim(restrictions%restrictions(i)%type) == "BANNED_MIME_TYPE") then
                         ext = extension(trim(fileObj%filename))
                         filemime = getMime(ext)
                         value = trim(restrictions%restrictions(i)%value)
                         if (index(value, filemime) > 0) then
-                            stop "RESTRICTION EXCEPTION: File " // fullfilename // " file type " // filemime // " banned on server"
+                            ret_error%name = "RESTRICTION EXCEPTION"
+                            ret_error%status = 1
+                            ret_error%message = "File " // fullfilename // " file type " // filemime // " banned on server"
                         end if
                     end if
                 end do
             end if
+
+            error = ret_error
         end subroutine checkRestrictions
 
         function createBucket() result (res)
@@ -192,6 +212,10 @@ module waifuvault_api
             integer :: rc, iostatus, filesize
 
             call checkRestrictions(fileObj)
+            if (error%status > 0) then
+                return
+            end if
+
             target_url = fileObj%build_url()
             if (len_trim(fileObj%url) > 0) then
                 ! URL Upload

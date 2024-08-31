@@ -1,5 +1,7 @@
 all: curl sdk tests
 
+build: curl sdk
+
 curl: libcurl/curl.f90 libcurl/curl_easy.f90 libcurl/curl_multi.f90 libcurl/curl_urlapi.f90 libcurl/curl_util.f90 libcurl/curl_macro.c
 	gcc -o libcurl/curl_macro.o -c libcurl/curl_macro.c
 	gfortran -o libcurl/curl_util.o -c libcurl/curl_util.f90

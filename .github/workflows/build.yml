@@ -20,4 +20,4 @@ jobs:
       with:
         version: latest
     - name: Build libraries
-      run: make all
+      run: make build

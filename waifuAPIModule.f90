@@ -508,7 +508,6 @@ module waifuvault_api
                     // '"' // achar(13) // achar(10) &
                     // 'Content-Length: ' // trim(stringsize) // achar(13) // achar(10)  &
                     // 'Content-Type: octet-stream' // achar(13) // achar(10) // 'Content-Transfer-Encoding: binary' &
-                    // achar(13) // achar(10) &
                     // achar(13) // achar(10)
         end function MIMEFile
 

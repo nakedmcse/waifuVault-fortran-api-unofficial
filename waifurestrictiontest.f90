@@ -41,7 +41,7 @@ program test_waifuvault_restrictions
     call sleep(1)
 
     ! Upload Good File
-    call goodfile_upload%create_upload('~/Downloads/walking.png', '', '10m', '', .false., .false.)
+    call goodfile_upload%create_upload('~/Downloads/rory2.jpg', '', '5m', '', .false., .false.)
     realfile_response = uploadFile(goodfile_upload)
     call getError(error)
     if (error%status > 0) then

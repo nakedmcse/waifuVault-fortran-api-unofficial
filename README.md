@@ -16,24 +16,13 @@ The SDK uses the libcurl-fortran bindings to provide the transport mechanism.  F
 library.
 
 ```sh
-cd libcurl
-gcc -c curl_macro.c
-gfortran -c curl_util.f90
-gfortran -c curl_easy.f90
-gfortran -c curl_multi.f90
-gfortran -c curl_urlapi.f90
-gfortran -c curl.f90
-ar rcs libfortran-curl.a curl.o curl_easy.o curl_multi.o curl_urlapi.o curl_util.o curl_macro.o
-cp *.mod ../
+make curl
 ```
 
 After that you can then build the waifuvault module.
 
 ```sh
-gfortran -c httpcallbackModule.f90
-gfortran -c waifuModelsModule.f90
-gfortran -cpp -c waifuAPIModule.f90
-ar rcs lib-waifuvault.a httpcallbackModule.o waifuModelsModule.o waifuAPIModule.o
+make sdk
 ```
 
 You can then reference the waifuvault module at the top of your code.

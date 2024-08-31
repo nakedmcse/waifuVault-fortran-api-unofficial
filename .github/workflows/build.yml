@@ -20,7 +20,4 @@ jobs:
       with:
         version: latest
     - name: Build libraries
-      run: |
-        chmod +x ./build.sh
-        ./build.sh
-      shell: bash
+      run: make all

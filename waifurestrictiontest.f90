@@ -6,7 +6,7 @@ program test_waifuvault_restrictions
     implicit none
 
     type(restriction_response) :: response
-    type(file_upload) :: realfile_upload
+    type(file_upload) :: badfile_upload, goodfile_upload
     type(file_response) :: realfile_response
     type(error_response) :: error
 
@@ -22,8 +22,8 @@ program test_waifuvault_restrictions
     call sleep(1)
 
     ! Upload Bad File
-    call realfile_upload%create_upload('~/Dropbox/Public/filebundler.exe', '', '10m', '', .false., .false.)
-    realfile_response = uploadFile(realfile_upload)
+    call badfile_upload%create_upload('~/Dropbox/Public/filebundler.exe', '', '10m', '', .false., .false.)
+    realfile_response = uploadFile(badfile_upload)
     call getError(error)
     if (error%status > 0) then
         print *, '--Error Object--'
@@ -41,8 +41,8 @@ program test_waifuvault_restrictions
     call sleep(1)
 
     ! Upload Good File
-    call realfile_upload%create_upload('~/Downloads/rory2.jpg', '', '10m', '', .false., .false.)
-    realfile_response = uploadFile(realfile_upload)
+    call goodfile_upload%create_upload('~/Downloads/walking.png', '', '10m', '', .false., .false.)
+    realfile_response = uploadFile(goodfile_upload)
     call getError(error)
     if (error%status > 0) then
         print *, '--Error Object--'

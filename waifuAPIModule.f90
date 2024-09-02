@@ -1,5 +1,4 @@
 ! Waifuvault API module
-#define BASEURL "https://waifuvault.moe/rest"
 module waifuvault_api
     use, intrinsic :: iso_c_binding
     use, intrinsic :: iso_fortran_env
@@ -12,10 +11,11 @@ module waifuvault_api
     type(restriction_response) restrictions
     type(error_response) error
     type(c_ptr) curl_ptr
+    character(len=:), allocatable :: BASEURL
 
     public :: openCurl, closeCurl, getError, fileInfo, fileUpdate, getFile, uploadFile, deleteFile, &
         createBucket, deleteBucket, getBucket, getRestrictions, clearRestrictions, response_callback, &
-        clearError
+        clearError, setAltBaseURL
     private
 
     contains
@@ -28,6 +28,9 @@ module waifuvault_api
                 stop 'Error: curl init failed'
             end if
             restrictions = clearRestrictions()
+            if (.not. allocated(BASEURL)) then
+                BASEURL = "https://waifuvault.moe/rest"
+            end if
         end subroutine openCurl
 
         subroutine closeCurl()
@@ -72,6 +75,12 @@ module waifuvault_api
             end if
             rc = curl_easy_perform(curl_ptr)
         end subroutine dispatch_curl
+
+        subroutine setAltBaseURL(alt_base_url)
+            character(len=*) :: alt_base_url
+
+            BASEURL = alt_base_url
+        end subroutine setAltBaseURL
 
         function getRestrictions() result (res)
             type(response_type), target :: body
@@ -216,7 +225,7 @@ module waifuvault_api
                 return
             end if
 
-            target_url = fileObj%build_url()
+            target_url = trim(BASEURL) // fileObj%build_url()
             if (len_trim(fileObj%url) > 0) then
                 ! URL Upload
                 fields = 'url='

@@ -16,7 +16,7 @@ sdk: httpcallbackModule.f90 waifuModelsModule.f90 waifuUtilsModule.f90 waifuAPIM
 	gfortran -c httpcallbackModule.f90
 	gfortran -c waifuModelsModule.f90
 	gfortran -c waifuUtilsModule.f90
-	gfortran -cpp -c waifuAPIModule.f90
+	gfortran -c waifuAPIModule.f90
 	ar rcs lib-waifuvault.a httpcallbackModule.o waifuModelsModule.o waifuUtilsModule.o waifuAPIModule.o
 	rm -f *.o
 

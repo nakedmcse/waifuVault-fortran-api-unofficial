@@ -63,7 +63,7 @@ end if
 
 ## Usage
 
-This API contains 10 interactions:
+This API contains 11 interactions:
 
 1. [Upload File](#upload-file)
 2. [Get File Info](#get-file-info)
@@ -75,6 +75,7 @@ This API contains 10 interactions:
 8. [Get Bucket](#get-bucket)
 9. [Get Restrictions](#get-restrictions)
 10. [Clear Restrictions](#clear-restrictions)
+11. [Set Alternate Base URL](#set-alt-baseurl)
 
 You need to include the module files in your code for the package:
 
@@ -449,4 +450,16 @@ print *, '--Clear Restrictions Response--'
 print *, 'First Entry:', trim(response%restrictions(1)%type), " ", trim(response%restrictions(1)%value)
 print *, 'Second Entry:', trim(response%restrictions(2)%type), " ", trim(response%restrictions(2)%value)
 print *, 'Third Entry:', trim(response%restrictions(3)%type), " ", trim(response%restrictions(3)%value)
+```
+
+### Set Alternate Base URL<a id="set-alt-baseurl"></a>
+
+To set a custom base URL in the SDK, you use the `setAltBaseURL` function.
+
+This will change the base URL used for all functions within the SDK.
+
+```fortran
+! Set Alternate Base URL
+call setAltBaseURL("https://waifuvault.walker.moe/rest")
+print *, '--Set Alternate Base URL--'
 ```

@@ -12,6 +12,10 @@ program test_waifuvault_restrictions
 
     call openCurl()
 
+    ! Set Alternate Base URL
+    call setAltBaseURL("https://waifuvault.walker.moe/rest")
+    print *, '--Set Alternate Base URL--'
+
     ! Get Restrictions
     response = getRestrictions()
     print *, '--Get Restrictions Response--'

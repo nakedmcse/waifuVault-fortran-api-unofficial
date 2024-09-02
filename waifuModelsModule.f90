@@ -93,7 +93,7 @@ module waifuvault_models
             class(file_upload) :: this
             integer :: len
             character(len=512) :: res
-            res = 'https://waifuvault.moe/rest'
+            res = ''
             if(len_trim(this%bucketToken)>0) then
                 res = trim(res) // '/' // trim(this%bucketToken)
             end if

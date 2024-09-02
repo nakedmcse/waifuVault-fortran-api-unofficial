@@ -12,6 +12,10 @@ program test_waifuvault_buckets
 
     call openCurl()
 
+    ! Set Alternate Base URL
+    call setAltBaseURL("https://waifuvault.walker.moe/rest")
+    print *, '--Set Alternate Base URL--'
+
     ! Create Bucket
     response = createBucket()
     print *, '--Create Bucket Response--'

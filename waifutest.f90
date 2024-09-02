@@ -46,6 +46,10 @@ program test_waifuvault
 
     call openCurl()
 
+    ! Set Alternate Base URL
+    call setAltBaseURL("https://waifuvault.walker.moe/rest")
+    print *, '--Set Alternate Base URL--'
+
     response = fileInfo('balls', .true.)
     print *, '--FileInfo Response Object--'
     print *, 'Token:', trim(response%token)

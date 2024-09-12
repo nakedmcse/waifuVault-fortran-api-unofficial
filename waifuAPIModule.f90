@@ -300,7 +300,7 @@ module waifuvault_api
 
             url = ''
             url = trim(BASEURL) // '/' // trim(token) // '?formatted='
-            url = merge(trim(url) // 'true', trim(url) // 'false', formatted)
+            url = merge(trim(url) // 'true ', trim(url) // 'false', formatted)
 
             call dispatch_curl(rc, 'GET', trim(url), c_null_ptr, body, '')
             call checkError(rc, body%content)

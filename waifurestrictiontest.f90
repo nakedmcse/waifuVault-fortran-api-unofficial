@@ -7,7 +7,7 @@ program test_waifuvault_restrictions
 
     type(restriction_response) :: response
     type(file_upload) :: badfile_upload, goodfile_upload
-    type(file_response) :: realfile_response
+    type(file_response) :: realfile_response, checkinfo_response
     type(error_response) :: error
 
     call openCurl()
@@ -45,7 +45,7 @@ program test_waifuvault_restrictions
     call sleep(1)
 
     ! Upload Good File
-    call goodfile_upload%create_upload('~/Downloads/rory2.jpg', '', '5m', '', .false., .false.)
+    call goodfile_upload%create_upload('~/Downloads/rory2.jpg', '', '', '', .false., .false.)
     realfile_response = uploadFile(goodfile_upload)
     call getError(error)
     if (error%status > 0) then
@@ -59,9 +59,20 @@ program test_waifuvault_restrictions
         print *, '--File Upload Response--'
         print *, 'Token:', trim(realfile_response%token)
         print *, 'URL:', trim(realfile_response%url)
+        print *, 'Retention:', trim(realfile_response%retentionPeriod)
         print *, ''
     end if
     call sleep(1)
+
+    ! Check file info
+    checkinfo_response = fileInfo(trim(realfile_response%token), .false.)
+    print *, '--FileInfo Response Object--'
+    print *, 'Token:', trim(checkinfo_response%token)
+    print *, 'URL:', trim(checkinfo_response%url)
+    print *, 'Retention:', trim(checkinfo_response%retentionPeriod)
+    print *, 'Options/hideFilename:', checkinfo_response%options%hideFilename
+    print *, 'Options/oneTimeDownload:', checkinfo_response%options%oneTimeDownload
+    print *, 'Options/protected:', checkinfo_response%options%protected
 
     ! Clear Restrictions
     response = clearRestrictions()

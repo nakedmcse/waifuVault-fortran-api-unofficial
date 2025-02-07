@@ -14,6 +14,15 @@ module waifuvault_utils
         res = input == 'true'
     end function stringToLogical
 
+    function stringToInt(input) result (res)
+        character(len=*) :: input
+        integer :: res, ios
+        read(input, '(I10)', IOSTAT=ios) res
+        if (ios /= 0) then
+            res = -1
+        end if
+    end function stringToInt
+
     function basename(path)
         character(len=*), intent(in) :: path
         character(len=len(path)) :: basename

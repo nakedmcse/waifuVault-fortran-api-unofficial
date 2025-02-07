@@ -421,31 +421,58 @@ module waifuvault_api
         function deserializeResponse(body) result (res)
             character(len=*) :: body
             character(len=:), allocatable :: splits(:), vals(:), cleaned
-            logical :: string_retention
+            logical :: string_retention, top_token, top_bucket
+            type(album_info) :: album
             type(file_options) :: options
             type(file_response) :: res
             integer :: i
+            top_token = .false.
+            top_bucket = .false.
+            album%token = ''
+            album%publicToken = ''
+            album%name = ''
+            album%bucket = ''
+            album%dateCreated = -1
 
             call split_string(trim(body), ',', splits)
             do i = 1, size(splits)
                 cleaned = ''
                 call remove_characters(trim(splits(i)),'"{}',cleaned)
                 call split_string(cleaned, ':', vals)
-                if (vals(1) == 'token') then
+                if (vals(1) == 'token' .and. top_token == .false.) then
                     res%token = trim(vals(2))
+                    top_token = true
+                elseif (vals(1) == 'bucket' .and. top_bucket == .false.) then
+                    res%bucket = trim(vals(2))
+                    top_bucket = true
                 elseif (vals(1) == 'url') then
                     res%url = trim(vals(2)) // ':' // trim(vals(3))
                 elseif (vals(1) == 'retentionPeriod') then
                     res%retentionPeriod = trim(vals(2))
+                elseif (vals(1) == 'id') then
+                    res%id = stringToInt(vals(2))
+                elseif (vals(1) == 'views') then
+                    res%views = stringToInt(vals(2))
                 elseif (vals(1) == 'options') then
                     options%hideFilename = stringToLogical(vals(3))
                 elseif (vals(1) == 'oneTimeDownload') then
                     options%oneTimeDownload = stringToLogical(vals(2))
                 elseif (vals(1) == 'protected') then
                     options%protected = stringToLogical(vals(2))
+                elseif (vals(1) == 'token') then
+                    album%token = trim(vals(3))
+                elseif (vals(1) == 'bucket') then
+                    album%bucket = trim(vals(2))
+                elseif (vals(1) == 'publicToken') then
+                    album%publicToken = trim(vals(2))
+                elseif (vals(1) == 'name') then
+                    album%name = trim(vals(2))
+                elseif (vals(1) == 'dateCreated') then
+                    album%dateCreated = stringToInt(vals(2))
                 end if
             end do
             res%options = options
+            res%album = album
         end function deserializeResponse
 
         function deserializeBucketResponse(body) result (res)

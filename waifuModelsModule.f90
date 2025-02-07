@@ -26,12 +26,23 @@ module waifuvault_models
         procedure :: create_options
     end type file_options
 
+    ! album_info
+    type, public :: album_info
+        character(len=80) :: token
+        character(len=80) :: publicToken
+        character(len=512) :: name
+        character(len=80) :: bucket
+        integer :: dateCreated
+    end type album_info
+
     ! file_response
     type, public :: file_response
         character(len=80) :: token
         character(len=80) :: bucket
         character(len=512) :: url
         character(len=80) :: retentionPeriod
+        integer :: id
+        integer :: views
         type(file_options) :: options
         contains
         procedure :: create_response

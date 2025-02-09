@@ -157,6 +157,73 @@ module waifuvault_api
             error = ret_error
         end subroutine checkRestrictions
 
+        function createAlbum(bucket_token, name) result (res)
+            type(album_response) :: res
+            character(len=*) :: bucket_token, name
+
+            ! TODO: Implement
+
+        end function createAlbum
+
+        function deleteAlbum(album_token, delete_files) result (res)
+            character(len=*) :: album_token
+            logical :: delete_files, res
+
+            ! TODO: Implement
+
+        end function deleteAlbum
+
+        function getAlbum(token) result (res)
+            type(album_response) :: res
+            character(len=*) :: token
+
+            ! TODO: Implement
+
+        end function getAlbum
+
+        function associateFiles(token, file_tokens) result (res)
+            type(album_response) :: res
+            character(len=*) :: token
+            character(len=80), dimension(100) :: file_tokens
+
+            ! TODO: Implement
+
+        end function associateFiles
+
+        function disassociateFiles(token, file_tokens) result (res)
+            type(album_response) :: res
+            character(len=*) :: token
+            character(len=80), dimension(100) :: file_tokens
+
+            ! TODO: Implement
+
+        end function disassociateFiles
+
+        function shareAlbum(token) result (res)
+            character(len=*) :: token
+            character(len=4096) :: res
+
+            ! TODO: Implement
+
+        end function shareAlbum
+
+        function revokeAlbum(token) result (res)
+            character(len=*) :: token
+            logical :: res
+
+            ! TODO: Implement
+
+        end function revokeAlbum
+
+        subroutine downloadAlbum(token, files, buffer)
+            type(response_type), target :: buffer
+            character(len=*) :: token
+            integer, dimension(256) :: files
+
+            ! TODO: Implement
+
+        end subroutine downloadAlbum
+
         function createBucket() result (res)
             type(response_type), target :: body
             character(len=512) :: url

@@ -14,6 +14,15 @@ module waifuvault_utils
         res = input == 'true'
     end function stringToLogical
 
+    function logicalToString(input) result (res)
+        logical :: input
+        character(len=5) :: res
+        res = 'false'
+        if (input == .true.) then
+            res = 'true'
+        end if
+    end function logicalToString
+
     function stringToInt(input) result (res)
         character(len=*) :: input
         integer :: res, ios

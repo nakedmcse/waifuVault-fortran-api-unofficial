@@ -160,25 +160,57 @@ module waifuvault_api
         function createAlbum(bucket_token, name) result (res)
             type(album_response) :: res
             character(len=*) :: bucket_token, name
+            character(len=:), allocatable :: url, content
+            type(response_type), target :: body
+            type(c_ptr) :: headers = c_null_ptr
+            integer :: rc
 
-            ! TODO: Implement
+            url = trim(BASEURL) // '/album/' // trim(bucket_token);
+            headers = curl_slist_append(headers, ('Content-Type: application/json'))
+            content = '{"name": "' // trim(name) // '"}'
 
+            call dispatch_curl(rc, 'POST', url, headers, body, content)
+            call curl_slist_free_all(headers)
+            call checkError(rc, body%content)
+
+            res = deserializeAlbumResponse(body%content)
+            deallocate(body%content)
         end function createAlbum
 
         function deleteAlbum(album_token, delete_files) result (res)
             character(len=*) :: album_token
+            character(len=512) :: url
+            type(c_ptr) :: headers = c_null_ptr
+            type(response_type), target :: body
             logical :: delete_files, res
+            integer :: rc
 
-            ! TODO: Implement
+            url = ''
+            url = trim(BASEURL) // '/album/' // trim(album_token) // '?deleteFiles=' // logicalToString(delete_files)
 
+            call dispatch_curl(rc, 'DELETE', trim(url), c_null_ptr, body, '')
+            call checkError(rc, body%content)
+
+            res = body%content(1:4) == 'true'
+            deallocate(body%content)
         end function deleteAlbum
 
         function getAlbum(token) result (res)
             type(album_response) :: res
             character(len=*) :: token
+            character(len=512) :: url
+            type(c_ptr) :: headers = c_null_ptr
+            type(response_type), target :: body
+            integer :: rc
 
-            ! TODO: Implement
+            url = ''
+            url = trim(BASEURL) // '/album/' // trim(album_token)
 
+            call dispatch_curl(rc, 'GET', trim(url), c_null_ptr, body, '')
+            call checkError(rc, body%content)
+
+            res = deserializeAlbumResponse(body%content)
+            deallocate(body%content)
         end function getAlbum
 
         function associateFiles(token, file_tokens) result (res)
@@ -202,17 +234,41 @@ module waifuvault_api
         function shareAlbum(token) result (res)
             character(len=*) :: token
             character(len=4096) :: res
+            character(len=512) :: url
+            type(c_ptr) :: headers = c_null_ptr
+            type(response_type), target :: body
+            type(general_response) :: gen
+            integer :: rc
 
-            ! TODO: Implement
+            url = ''
+            url = trim(BASEURL) // '/album/share/' // trim(token)
 
+            call dispatch_curl(rc, 'GET', trim(url), c_null_ptr, body, '')
+            call checkError(rc, body%content)
+
+            gen = deserializeGeneralResponse(body%content)
+            res = gen%description
+            deallocate(body%content)
         end function shareAlbum
 
         function revokeAlbum(token) result (res)
             character(len=*) :: token
             logical :: res
+            character(len=512) :: url
+            type(c_ptr) :: headers = c_null_ptr
+            type(response_type), target :: body
+            type(general_response) :: gen
+            integer :: rc
 
-            ! TODO: Implement
+            url = ''
+            url = trim(BASEURL) // '/album/revoke/' // trim(token)
 
+            call dispatch_curl(rc, 'GET', trim(url), c_null_ptr, body, '')
+            call checkError(rc, body%content)
+
+            gen = deserializeGeneralResponse(body%content)
+            res = gen%success
+            deallocate(body%content)
         end function revokeAlbum
 
         subroutine downloadAlbum(token, files, buffer)
@@ -577,6 +633,20 @@ module waifuvault_api
                 end if
             end do
         end function deserializeBucketResponse
+
+        function deserializeAlbumResponse(body) result (res)
+            type(album_response) :: res
+
+            ! TODO: Implement
+
+        end function deserializeAlbumResponse
+
+        function deserializeGeneralResponse(body) result (res)
+            type(general_response) :: res
+
+            ! TODO: Implement
+
+        end function deserializeGeneralResponse
 
         function deserializeRestrictionResponse(body) result (res)
             character(len=*) :: body

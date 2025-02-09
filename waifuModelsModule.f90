@@ -35,6 +35,16 @@ module waifuvault_models
         integer :: dateCreated
     end type album_info
 
+    ! album_response
+    type, public :: album_response
+        character(len=80) :: token
+        character(len=80) :: publicToken
+        character(len=512) :: name
+        character(len=80) :: bucket
+        integer :: dateCreated
+        type(file_response), dimension(256) :: files
+    end type album_response
+
     ! file_response
     type, public :: file_response
         character(len=80) :: token
@@ -51,7 +61,8 @@ module waifuvault_models
     ! bucket_response
     type, public :: bucket_response
         character(len=80) :: token
-        type(file_response), dimension(100) :: files
+        type(file_response), dimension(256) :: files
+        type(album_response), dimension(256) :: albums
     end type bucket_response
 
     ! Restriction
@@ -73,6 +84,12 @@ module waifuvault_models
         contains
         procedure :: create_error_response
     end type error_response
+
+    ! general_response
+    type, public :: general_response
+        logical :: success
+        character(len=4096) :: description
+    end type general_response
 
     contains
 

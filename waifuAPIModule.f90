@@ -213,22 +213,60 @@ module waifuvault_api
             deallocate(body%content)
         end function getAlbum
 
-        function associateFiles(token, file_tokens) result (res)
+        function associateFiles(token, file_tokens, file_count) result (res)
             type(album_response) :: res
             character(len=*) :: token
             character(len=80), dimension(100) :: file_tokens
+            character(len=:), allocatable :: url, content
+            type(response_type), target :: body
+            type(c_ptr) :: headers = c_null_ptr
+            integer :: rc, i, file_count
 
-            ! TODO: Implement
+            url = trim(BASEURL) // '/album/' // trim(token) // '/associate'
+            headers = curl_slist_append(headers, ('Content-Type: application/json'))
+            content = '{"fileTokens": '
+            do i = 0, file_count
+                content = content // '"' // trim(file_tokens(i)) // '"'
+                if (i /= file_count) then
+                    content = content // ','
+                end if
+            end do
+            content = content // '}'
 
+            call dispatch_curl(rc, 'POST', url, headers, body, content)
+            call curl_slist_free_all(headers)
+            call checkError(rc, body%content)
+
+            res = deserializeAlbumResponse(body%content)
+            deallocate(body%content)
         end function associateFiles
 
-        function disassociateFiles(token, file_tokens) result (res)
+        function disassociateFiles(token, file_tokens, file_count) result (res)
             type(album_response) :: res
             character(len=*) :: token
             character(len=80), dimension(100) :: file_tokens
+            character(len=:), allocatable :: url, content
+            type(response_type), target :: body
+            type(c_ptr) :: headers = c_null_ptr
+            integer :: rc, i, file_count
 
-            ! TODO: Implement
+            url = trim(BASEURL) // '/album/' // trim(token) // '/disassociate'
+            headers = curl_slist_append(headers, ('Content-Type: application/json'))
+            content = '{"fileTokens": '
+            do i = 0, file_count
+                content = content // '"' // trim(file_tokens(i)) // '"'
+                if (i /= file_count) then
+                    content = content // ','
+                end if
+            end do
+            content = content // '}'
 
+            call dispatch_curl(rc, 'POST', url, headers, body, content)
+            call curl_slist_free_all(headers)
+            call checkError(rc, body%content)
+
+            res = deserializeAlbumResponse(body%content)
+            deallocate(body%content)
         end function disassociateFiles
 
         function shareAlbum(token) result (res)
@@ -271,13 +309,30 @@ module waifuvault_api
             deallocate(body%content)
         end function revokeAlbum
 
-        subroutine downloadAlbum(token, files, buffer)
+        subroutine downloadAlbum(token, files, file_count, buffer)
             type(response_type), target :: buffer
             character(len=*) :: token
             integer, dimension(256) :: files
+            character(len=:), allocatable :: url, content, stringInt
+            type(c_ptr) :: headers = c_null_ptr
+            integer :: file_count, rc, i
 
-            ! TODO: Implement
+            url = trim(BASEURL) // '/album/download' // trim(token)
+            headers = curl_slist_append(headers, ('Content-Type: application/json'))
+            content = '['
+            do i = 0, file_count
+                stringInt = intToSting(files(i))
+                content = content // stringInt
+                if (i /= file_count) then
+                    content = content // ','
+                end if
+                deallocate(stringInt)
+            end do
+            content = content // ']'
 
+            call dispatch_curl(rc, 'POST', url, headers, buffer, content)
+            call curl_slist_free_all(headers)
+            call checkError(rc, buffer%content)
         end subroutine downloadAlbum
 
         function createBucket() result (res)

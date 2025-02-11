@@ -32,6 +32,14 @@ module waifuvault_utils
         end if
     end function stringToInt
 
+    function intToString(input) result (res)
+        integer :: input, length
+        character(len=:), allocatable :: res
+        inquire(iolength=length) input
+        allocate(character(len=length) :: res)
+        write(str, '(I0)') input
+    end function intToString
+
     function basename(path)
         character(len=*), intent(in) :: path
         character(len=len(path)) :: basename

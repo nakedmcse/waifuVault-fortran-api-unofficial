@@ -700,9 +700,8 @@ module waifuvault_api
             type(general_response) :: res
             character(len=*) :: body
             character(len=:), allocatable :: splits(:), vals(:), cleaned
-            integer :: i,j
+            integer :: i
 
-            j = 1
             call split_string(trim(body), ',', splits)
             do i = 1, size(splits)
                 cleaned = ''

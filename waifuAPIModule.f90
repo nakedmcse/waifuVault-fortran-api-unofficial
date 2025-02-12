@@ -698,9 +698,26 @@ module waifuvault_api
 
         function deserializeGeneralResponse(body) result (res)
             type(general_response) :: res
+            character(len=*) :: body
+            character(len=:), allocatable :: splits(:), vals(:), cleaned
+            integer :: i,j
 
-            ! TODO: Implement
-
+            j = 1
+            call split_string(trim(body), ',', splits)
+            do i = 1, size(splits)
+                cleaned = ''
+                call remove_characters(trim(splits(i)),'"{}[]',cleaned)
+                call split_string(cleaned, ':', vals)
+                if (vals(1) == 'success') then
+                    if (trim(vals(2)) == 'true') then
+                        res%success = .true.
+                    else
+                        res%sucess = .false.
+                    end if
+                elseif (vals(1) == 'description') then
+                    res%description = trim(vals(2))
+                end if
+            end do
         end function deserializeGeneralResponse
 
         function deserializeRestrictionResponse(body) result (res)

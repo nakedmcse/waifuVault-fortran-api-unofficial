@@ -4,7 +4,8 @@ module waifuvault_utils
     use, intrinsic :: iso_fortran_env
     implicit none
     private
-    public :: stringToLogical, basename, expandHomedir, extension, getHomeDirectory, split_string, remove_characters, getMime
+    public :: stringToLogical, basename, expandHomedir, extension, getHomeDirectory, split_string, remove_characters, &
+                logicalToString, stringToInt, intToString, getMime
 
     contains
 
@@ -18,7 +19,7 @@ module waifuvault_utils
         logical :: input
         character(len=5) :: res
         res = 'false'
-        if (input == .true.) then
+        if (input .eqv. .true.) then
             res = 'true'
         end if
     end function logicalToString
@@ -37,7 +38,7 @@ module waifuvault_utils
         character(len=:), allocatable :: res
         inquire(iolength=length) input
         allocate(character(len=length) :: res)
-        write(str, '(I0)') input
+        write(res, '(I0)') input
     end function intToString
 
     function basename(path)

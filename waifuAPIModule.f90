@@ -14,6 +14,7 @@ module waifuvault_api
     character(len=:), allocatable :: BASEURL
 
     public :: openCurl, closeCurl, getError, fileInfo, fileUpdate, getFile, uploadFile, deleteFile, &
+        createAlbum, deleteAlbum, getAlbum, shareAlbum, revokeAlbum, associateFiles, disassociateFiles, downloadAlbum, &
         createBucket, deleteBucket, getBucket, getRestrictions, clearRestrictions, response_callback, &
         clearError, setAltBaseURL
     private
@@ -204,7 +205,7 @@ module waifuvault_api
             integer :: rc
 
             url = ''
-            url = trim(BASEURL) // '/album/' // trim(album_token)
+            url = trim(BASEURL) // '/album/' // trim(token)
 
             call dispatch_curl(rc, 'GET', trim(url), c_null_ptr, body, '')
             call checkError(rc, body%content)
@@ -225,7 +226,7 @@ module waifuvault_api
             url = trim(BASEURL) // '/album/' // trim(token) // '/associate'
             headers = curl_slist_append(headers, ('Content-Type: application/json'))
             content = '{"fileTokens": '
-            do i = 0, file_count
+            do i = 1, file_count
                 content = content // '"' // trim(file_tokens(i)) // '"'
                 if (i /= file_count) then
                     content = content // ','
@@ -253,7 +254,7 @@ module waifuvault_api
             url = trim(BASEURL) // '/album/' // trim(token) // '/disassociate'
             headers = curl_slist_append(headers, ('Content-Type: application/json'))
             content = '{"fileTokens": '
-            do i = 0, file_count
+            do i = 1, file_count
                 content = content // '"' // trim(file_tokens(i)) // '"'
                 if (i /= file_count) then
                     content = content // ','
@@ -320,8 +321,8 @@ module waifuvault_api
             url = trim(BASEURL) // '/album/download' // trim(token)
             headers = curl_slist_append(headers, ('Content-Type: application/json'))
             content = '['
-            do i = 0, file_count
-                stringInt = intToSting(files(i))
+            do i = 1, file_count
+                stringInt = intToString(files(i))
                 content = content // stringInt
                 if (i /= file_count) then
                     content = content // ','
@@ -617,12 +618,12 @@ module waifuvault_api
                 cleaned = ''
                 call remove_characters(trim(splits(i)),'"{}',cleaned)
                 call split_string(cleaned, ':', vals)
-                if (vals(1) == 'token' .and. top_token == .false.) then
+                if (vals(1) == 'token' .and. top_token .eqv. .false.) then
                     res%token = trim(vals(2))
-                    top_token = true
-                elseif (vals(1) == 'bucket' .and. top_bucket == .false.) then
+                    top_token = .true.
+                elseif (vals(1) == 'bucket' .and. top_bucket .eqv. .false.) then
                     res%bucket = trim(vals(2))
-                    top_bucket = true
+                    top_bucket = .true.
                 elseif (vals(1) == 'url') then
                     res%url = trim(vals(2)) // ':' // trim(vals(3))
                 elseif (vals(1) == 'retentionPeriod') then
@@ -691,9 +692,46 @@ module waifuvault_api
 
         function deserializeAlbumResponse(body) result (res)
             type(album_response) :: res
+            character(len=*) :: body
+            character(len=:), allocatable :: splits(:), vals(:), cleaned
+            type(file_options) :: options
+            logical :: firstToken
+            integer :: i,j
 
-            ! TODO: Implement
-
+            call split_string(trim(body), ',', splits)
+            j = 0
+            firstToken = .true.
+            do i = 1, size(splits)
+                cleaned = ''
+                call remove_characters(trim(splits(i)),'"{}[]',cleaned)
+                call split_string(cleaned, ':', vals)
+                if (vals(1) == 'token' .and. firstToken) then
+                    res%token = trim(vals(2))
+                    firstToken = .false.
+                elseif (vals(1) == 'bucket') then
+                    res%bucket = trim(vals(2))
+                elseif (vals(1) == 'publicToken') then
+                    res%publicToken = trim(vals(2))
+                elseif (vals(1) == 'name') then
+                    res%name = trim(vals(2))
+                elseif (vals(1) == 'dateCreated') then
+                    res%dateCreated = stringToInt(vals(2))
+                elseif (vals(1) == 'token') then
+                    if(j<100) then
+                        j = j + 1
+                    end if
+                    res%files(j)%token = trim(vals(2))
+                elseif (vals(2) == 'token') then
+                    if(j<100) then
+                        j = j + 1
+                    end if
+                    res%files(j)%token = trim(vals(3))
+                elseif (vals(1) == 'url') then
+                    res%files(j)%url = trim(vals(2)) // ':' // trim(vals(3))
+                elseif (vals(1) == 'retentionPeriod') then
+                    res%files(j)%retentionPeriod = trim(vals(2))
+                end if
+            end do
         end function deserializeAlbumResponse
 
         function deserializeGeneralResponse(body) result (res)
@@ -711,7 +749,7 @@ module waifuvault_api
                     if (trim(vals(2)) == 'true') then
                         res%success = .true.
                     else
-                        res%sucess = .false.
+                        res%success = .false.
                     end if
                 elseif (vals(1) == 'description') then
                     res%description = trim(vals(2))

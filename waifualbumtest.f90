@@ -7,10 +7,13 @@ program test_waifuvault_albums
 
     type(file_upload) :: realfile_upload
     type(file_response) :: realfile1_response, realfile2_response
-    type(album_response) :: create_album_response, get_album_response
+    type(album_response) :: create_album_response, get_album_response, associate_album_response, disassociate_album_response
     type(bucket_response) :: response, get_response
+    type(response_type) :: buffer
     logical :: delete_response, delete_album_response, revoke_album_response
     character(len=4096) :: share_album_response
+    character(len=80), dimension(100) :: file_tokens
+    integer, dimension(256) :: files
 
     call openCurl()
 
@@ -51,6 +54,16 @@ program test_waifuvault_albums
     call sleep(1)
 
     ! Associate Files
+    file_tokens(1) = trim(realfile1_response%token)
+    file_tokens(2) = trim(realfile2_response%token)
+    associate_album_response = associateFiles(trim(create_album_response%token),file_tokens,2)
+    print *, '--Associate Album Response--'
+    print *, 'Album Token:', trim(associate_album_response%token)
+    print *, 'Album Name:', trim(associate_album_response%name)
+    print *, 'File 1 token:', trim(associate_album_response%files(1)%token)
+    print *, 'File 2 token:', trim(associate_album_response%files(2)%token)
+    print *, ''
+    call sleep(1)
 
     ! Share Album
     share_album_response = shareAlbum(trim(create_album_response%token))
@@ -60,6 +73,13 @@ program test_waifuvault_albums
     call sleep(1)
 
     ! Get Album
+    get_album_response = getAlbum(trim(create_album_response%token));
+    print *, '--Get Album Response--'
+    print *, 'Album Token:', trim(get_album_response%token)
+    print *, 'Album Name:', trim(get_album_response%name)
+    print *, 'Album Public Token:', trim(get_album_response%publicToken)
+    print *, ''
+    call sleep(1)
 
     ! Revoke Album
     revoke_album_response = revokeAlbum(trim(create_album_response%token))
@@ -68,9 +88,24 @@ program test_waifuvault_albums
     print *, ''
     call sleep(1)
 
-    ! Disassociate Files
-
     ! Download Album
+    call downloadAlbum(trim(create_album_response%token), files, 0, buffer)
+    print *, '--Download Album Response--'
+    print *, 'File Length:', len_trim(buffer%content)
+    print *, ''
+    call sleep(1)
+
+    ! Disassociate Files
+    file_tokens(1) = trim(realfile1_response%token)
+    file_tokens(2) = trim(realfile2_response%token)
+    disassociate_album_response = disassociateFiles(trim(create_album_response%token),file_tokens,2)
+    print *, '--Disassociate Album Response--'
+    print *, 'Album Token:', trim(disassociate_album_response%token)
+    print *, 'Album Name:', trim(disassociate_album_response%name)
+    print *, 'File count:', disassociate_album_response%filecount
+
+    print *, ''
+    call sleep(1)
 
     ! Delete Album
     delete_album_response = deleteAlbum(trim(create_album_response%token), .false.)

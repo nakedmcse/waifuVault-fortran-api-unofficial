@@ -55,15 +55,17 @@ module waifuvault_models
         character(len=80) :: publicToken
         character(len=512) :: name
         character(len=80) :: bucket
-        integer :: dateCreated
-        type(file_response), dimension(256) :: files
+        integer :: dateCreated, filecount
+        type(file_response), dimension(:), allocatable :: files
+        contains
+        procedure :: album_append_file
     end type album_response
 
     ! bucket_response
     type, public :: bucket_response
         character(len=80) :: token
-        type(file_response), dimension(256) :: files
-        type(album_response), dimension(256) :: albums
+        type(file_response), dimension(100) :: files
+        type(album_info), dimension(100) :: albums
     end type bucket_response
 
     ! Restriction
@@ -181,4 +183,22 @@ module waifuvault_models
             this%status = status
             this%message = message
         end subroutine create_error_response
+
+        subroutine album_append_file(this, file)
+            class(album_response) :: this
+            type(file_response) :: file
+            type(file_response), dimension(:), allocatable :: temp
+
+            if(size(this%files) - this%filecount == 0) then
+                allocate(temp(this%filecount * 2))
+                temp(1:this%filecount) = this%files
+                deallocate(this%files)
+                allocate(this%files(this%filecount * 2))
+                this%files = temp
+                deallocate(temp)
+            end if
+
+            this%filecount = this%filecount + 1
+            this%files(this%filecount) = file
+        end subroutine album_append_file
 end module waifuvault_models

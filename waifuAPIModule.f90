@@ -14,6 +14,7 @@ module waifuvault_api
     character(len=:), allocatable :: BASEURL
 
     public :: openCurl, closeCurl, getError, fileInfo, fileUpdate, getFile, uploadFile, deleteFile, &
+        createAlbum, deleteAlbum, getAlbum, shareAlbum, revokeAlbum, associateFiles, disassociateFiles, downloadAlbum, &
         createBucket, deleteBucket, getBucket, getRestrictions, clearRestrictions, response_callback, &
         clearError, setAltBaseURL
     private
@@ -156,6 +157,184 @@ module waifuvault_api
 
             error = ret_error
         end subroutine checkRestrictions
+
+        function createAlbum(bucket_token, name) result (res)
+            type(album_response) :: res
+            character(len=*) :: bucket_token, name
+            character(len=:), allocatable :: url, content
+            type(response_type), target :: body
+            type(c_ptr) :: headers = c_null_ptr
+            integer :: rc
+
+            url = trim(BASEURL) // '/album/' // trim(bucket_token);
+            headers = curl_slist_append(headers, ('Content-Type: application/json'))
+            content = '{"name": "' // trim(name) // '"}'
+
+            call dispatch_curl(rc, 'POST', url, headers, body, content)
+            call curl_slist_free_all(headers)
+            call checkError(rc, body%content)
+
+            res = deserializeAlbumResponse(body%content)
+            deallocate(body%content)
+        end function createAlbum
+
+        function deleteAlbum(album_token, delete_files) result (res)
+            character(len=*) :: album_token
+            character(len=512) :: url
+            type(c_ptr) :: headers = c_null_ptr
+            type(response_type), target :: body
+            logical :: delete_files, res
+            integer :: rc
+
+            url = ''
+            url = trim(BASEURL) // '/album/' // trim(album_token) // '?deleteFiles=' // logicalToString(delete_files)
+
+            call dispatch_curl(rc, 'DELETE', trim(url), c_null_ptr, body, '')
+            call checkError(rc, body%content)
+
+            res = body%content(1:4) == 'true'
+            deallocate(body%content)
+        end function deleteAlbum
+
+        function getAlbum(token) result (res)
+            type(album_response) :: res
+            character(len=*) :: token
+            character(len=512) :: url
+            type(c_ptr) :: headers = c_null_ptr
+            type(response_type), target :: body
+            integer :: rc
+
+            url = ''
+            url = trim(BASEURL) // '/album/' // trim(token)
+
+            call dispatch_curl(rc, 'GET', trim(url), c_null_ptr, body, '')
+            call checkError(rc, body%content)
+
+            res = deserializeAlbumResponse(body%content)
+            deallocate(body%content)
+        end function getAlbum
+
+        function associateFiles(token, file_tokens, file_count) result (res)
+            type(album_response) :: res
+            character(len=*) :: token
+            character(len=80), dimension(100) :: file_tokens
+            character(len=:), allocatable :: url, content
+            type(response_type), target :: body
+            type(c_ptr) :: headers = c_null_ptr
+            integer :: rc, i, file_count
+
+            url = trim(BASEURL) // '/album/' // trim(token) // '/associate'
+            headers = curl_slist_append(headers, ('Content-Type: application/json'))
+            content = '{"fileTokens": ['
+            do i = 1, file_count
+                content = content // '"' // trim(file_tokens(i)) // '"'
+                if (i /= file_count) then
+                    content = content // ','
+                end if
+            end do
+            content = content // ']}'
+
+            call dispatch_curl(rc, 'POST', url, headers, body, content)
+            call curl_slist_free_all(headers)
+            call checkError(rc, body%content)
+
+            res = deserializeAlbumResponse(body%content)
+            deallocate(body%content)
+        end function associateFiles
+
+        function disassociateFiles(token, file_tokens, file_count) result (res)
+            type(album_response) :: res
+            character(len=*) :: token
+            character(len=80), dimension(100) :: file_tokens
+            character(len=:), allocatable :: url, content
+            type(response_type), target :: body
+            type(c_ptr) :: headers = c_null_ptr
+            integer :: rc, i, file_count
+
+            url = trim(BASEURL) // '/album/' // trim(token) // '/disassociate'
+            headers = curl_slist_append(headers, ('Content-Type: application/json'))
+            content = '{"fileTokens": ['
+            do i = 1, file_count
+                content = content // '"' // trim(file_tokens(i)) // '"'
+                if (i /= file_count) then
+                    content = content // ','
+                end if
+            end do
+            content = content // ']}'
+
+            call dispatch_curl(rc, 'POST', url, headers, body, content)
+            call curl_slist_free_all(headers)
+            call checkError(rc, body%content)
+
+            res = deserializeAlbumResponse(body%content)
+            deallocate(body%content)
+        end function disassociateFiles
+
+        function shareAlbum(token) result (res)
+            character(len=*) :: token
+            character(len=4096) :: res
+            character(len=512) :: url
+            type(c_ptr) :: headers = c_null_ptr
+            type(response_type), target :: body
+            type(general_response) :: gen
+            integer :: rc
+
+            url = ''
+            url = trim(BASEURL) // '/album/share/' // trim(token)
+
+            call dispatch_curl(rc, 'GET', trim(url), c_null_ptr, body, '')
+            call checkError(rc, body%content)
+
+            gen = deserializeGeneralResponse(body%content)
+            res = gen%description
+            deallocate(body%content)
+        end function shareAlbum
+
+        function revokeAlbum(token) result (res)
+            character(len=*) :: token
+            logical :: res
+            character(len=512) :: url
+            type(c_ptr) :: headers = c_null_ptr
+            type(response_type), target :: body
+            type(general_response) :: gen
+            integer :: rc
+
+            url = ''
+            url = trim(BASEURL) // '/album/revoke/' // trim(token)
+
+            call dispatch_curl(rc, 'GET', trim(url), c_null_ptr, body, '')
+            call checkError(rc, body%content)
+
+            gen = deserializeGeneralResponse(body%content)
+            res = gen%success
+            deallocate(body%content)
+        end function revokeAlbum
+
+        subroutine downloadAlbum(token, files, file_count, buffer)
+            type(response_type), target :: buffer
+            character(len=*) :: token
+            integer, dimension(256) :: files
+            character(len=:), allocatable :: url, content, stringInt
+            type(c_ptr) :: headers = c_null_ptr
+            integer :: file_count, rc, i
+
+            url = trim(BASEURL) // '/album/download' // trim(token)
+            headers = curl_slist_append(headers, ('Content-Type: application/json'))
+            content = '['
+            do i = 1, file_count
+                stringInt = intToString(files(i))
+                content = content // stringInt
+                if (i /= file_count) then
+                    content = content // ','
+                end if
+                deallocate(stringInt)
+            end do
+            content = content // ']'
+
+            call dispatch_curl(rc, 'POST', url, headers, buffer, content)
+            call curl_slist_free_all(headers)
+            call checkError(rc, buffer%content)
+        end subroutine downloadAlbum
 
         function createBucket() result (res)
             type(response_type), target :: body
@@ -421,31 +600,58 @@ module waifuvault_api
         function deserializeResponse(body) result (res)
             character(len=*) :: body
             character(len=:), allocatable :: splits(:), vals(:), cleaned
-            logical :: string_retention
+            logical :: string_retention, top_token, top_bucket
+            type(album_info) :: album
             type(file_options) :: options
             type(file_response) :: res
             integer :: i
+            top_token = .false.
+            top_bucket = .false.
+            album%token = ''
+            album%publicToken = ''
+            album%name = ''
+            album%bucket = ''
+            album%dateCreated = -1
 
             call split_string(trim(body), ',', splits)
             do i = 1, size(splits)
                 cleaned = ''
                 call remove_characters(trim(splits(i)),'"{}',cleaned)
                 call split_string(cleaned, ':', vals)
-                if (vals(1) == 'token') then
+                if (vals(1) == 'token' .and. .not. top_token) then
                     res%token = trim(vals(2))
+                    top_token = .true.
+                elseif (vals(1) == 'bucket' .and. .not. top_bucket) then
+                    res%bucket = trim(vals(2))
+                    top_bucket = .true.
                 elseif (vals(1) == 'url') then
                     res%url = trim(vals(2)) // ':' // trim(vals(3))
                 elseif (vals(1) == 'retentionPeriod') then
                     res%retentionPeriod = trim(vals(2))
+                elseif (vals(1) == 'id') then
+                    res%id = stringToInt(vals(2))
+                elseif (vals(1) == 'views') then
+                    res%views = stringToInt(vals(2))
                 elseif (vals(1) == 'options') then
                     options%hideFilename = stringToLogical(vals(3))
                 elseif (vals(1) == 'oneTimeDownload') then
                     options%oneTimeDownload = stringToLogical(vals(2))
                 elseif (vals(1) == 'protected') then
                     options%protected = stringToLogical(vals(2))
+                elseif (vals(1) == 'token') then
+                    album%token = trim(vals(3))
+                elseif (vals(1) == 'bucket') then
+                    album%bucket = trim(vals(2))
+                elseif (vals(1) == 'publicToken') then
+                    album%publicToken = trim(vals(2))
+                elseif (vals(1) == 'name') then
+                    album%name = trim(vals(2))
+                elseif (vals(1) == 'dateCreated') then
+                    album%dateCreated = stringToInt(vals(2))
                 end if
             end do
             res%options = options
+            res%album = album
         end function deserializeResponse
 
         function deserializeBucketResponse(body) result (res)
@@ -483,6 +689,81 @@ module waifuvault_api
                 end if
             end do
         end function deserializeBucketResponse
+
+        function deserializeAlbumResponse(body) result (res)
+            type(album_response) :: res
+            character(len=*) :: body
+            character(len=:), allocatable :: splits(:), vals(:), cleaned
+            type(file_options) :: options
+            type(file_response) :: file
+            logical :: firstToken
+            integer :: i, fileComplete
+
+            res%filecount = 0
+            allocate(res%files(1))
+
+            call split_string(trim(body), ',', splits)
+            firstToken = .true.
+            fileComplete = 0
+            do i = 1, size(splits)
+                cleaned = ''
+                call remove_characters(trim(splits(i)),'"{}[]',cleaned)
+                call split_string(cleaned, ':', vals)
+                if (vals(1) == 'token' .and. firstToken) then
+                    res%token = trim(vals(2))
+                    firstToken = .false.
+                elseif (vals(1) == 'bucket') then
+                    res%bucket = trim(vals(2))
+                elseif (vals(1) == 'publicToken') then
+                    res%publicToken = trim(vals(2))
+                elseif (vals(1) == 'name') then
+                    res%name = trim(vals(2))
+                elseif (vals(1) == 'dateCreated') then
+                    res%dateCreated = stringToInt(vals(2))
+                elseif (fileComplete == 3) then
+                    call res%album_append_file(file)
+                    fileComplete = 0
+                elseif (vals(1) == 'token') then
+                    file%token = trim(vals(2))
+                    fileComplete = fileComplete + 1
+                elseif (vals(2) == 'token') then
+                    file%token = trim(vals(3))
+                    fileComplete = fileComplete + 1
+                elseif (vals(1) == 'url') then
+                    file%url = trim(vals(2)) // ':' // trim(vals(3))
+                    fileComplete = fileComplete + 1
+                elseif (vals(1) == 'retentionPeriod') then
+                    file%retentionPeriod = trim(vals(2))
+                    fileComplete = fileComplete + 1
+                end if
+            end do
+        end function deserializeAlbumResponse
+
+        function deserializeGeneralResponse(body) result (res)
+            type(general_response) :: res
+            character(len=*) :: body
+            character(len=:), allocatable :: splits(:), vals(:), cleaned
+            integer :: i
+
+            call split_string(trim(body), ',', splits)
+            do i = 1, size(splits)
+                cleaned = ''
+                call remove_characters(trim(splits(i)),'"{}[]',cleaned)
+                call split_string(cleaned, ':', vals)
+                if (vals(1) == 'success') then
+                    if (trim(vals(2)) == 'true') then
+                        res%success = .true.
+                    else
+                        res%success = .false.
+                    end if
+                elseif (vals(1) == 'description') then
+                    res%description = trim(vals(2))
+                    if(size(vals) > 2) then
+                        res%description = trim(res%description) // ':' // trim(vals(3))
+                    end if
+                end if
+            end do
+        end function deserializeGeneralResponse
 
         function deserializeRestrictionResponse(body) result (res)
             character(len=*) :: body

@@ -4,7 +4,8 @@ module waifuvault_utils
     use, intrinsic :: iso_fortran_env
     implicit none
     private
-    public :: stringToLogical, basename, expandHomedir, extension, getHomeDirectory, split_string, remove_characters, getMime
+    public :: stringToLogical, basename, expandHomedir, extension, getHomeDirectory, split_string, remove_characters, &
+                logicalToString, stringToInt, intToString, getMime
 
     contains
 
@@ -13,6 +14,32 @@ module waifuvault_utils
         logical :: res
         res = input == 'true'
     end function stringToLogical
+
+    function logicalToString(input) result (res)
+        logical :: input
+        character(len=5) :: res
+        res = 'false'
+        if (input .eqv. .true.) then
+            res = 'true'
+        end if
+    end function logicalToString
+
+    function stringToInt(input) result (res)
+        character(len=*) :: input
+        integer :: res, ios
+        read(input, '(I10)', IOSTAT=ios) res
+        if (ios /= 0) then
+            res = -1
+        end if
+    end function stringToInt
+
+    function intToString(input) result (res)
+        integer :: input, length
+        character(len=:), allocatable :: res
+        inquire(iolength=length) input
+        allocate(character(len=length) :: res)
+        write(res, '(I0)') input
+    end function intToString
 
     function basename(path)
         character(len=*), intent(in) :: path

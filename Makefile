@@ -24,6 +24,7 @@ tests: lib-waifuvault.a libcurl/libfortran-curl.a waifutest.f90 waifubuckettest.
 	gfortran -o waifutest lib-waifuvault.a libcurl/libfortran-curl.a waifutest.f90 -lcurl
 	gfortran -o waifubuckettest lib-waifuvault.a libcurl/libfortran-curl.a waifubuckettest.f90 -lcurl
 	gfortran -o waifurestrictiontest lib-waifuvault.a libcurl/libfortran-curl.a waifurestrictiontest.f90 -lcurl
+	gfortran -o waifualbumtest lib-waifuvault.a libcurl/libfortran-curl.a waifualbumtest.f90 -lcurl
 
 clean:
 	rm -f *.o
@@ -35,3 +36,5 @@ clean:
 	rm -f waifutest
 	rm -f waifubuckettest
 	rm -f waifurestrictiontest
+	rm -f waifualbumtest
+

@@ -26,21 +26,46 @@ module waifuvault_models
         procedure :: create_options
     end type file_options
 
+    ! album_info
+    type, public :: album_info
+        character(len=80) :: token
+        character(len=80) :: publicToken
+        character(len=512) :: name
+        character(len=80) :: bucket
+        integer :: dateCreated
+    end type album_info
+
     ! file_response
     type, public :: file_response
         character(len=80) :: token
         character(len=80) :: bucket
         character(len=512) :: url
         character(len=80) :: retentionPeriod
+        integer :: id
+        integer :: views
         type(file_options) :: options
+        type(album_info) :: album
         contains
         procedure :: create_response
     end type file_response
+
+    ! album_response
+    type, public :: album_response
+        character(len=80) :: token
+        character(len=80) :: publicToken
+        character(len=512) :: name
+        character(len=80) :: bucket
+        integer :: dateCreated, filecount
+        type(file_response), dimension(:), allocatable :: files
+        contains
+        procedure :: album_append_file
+    end type album_response
 
     ! bucket_response
     type, public :: bucket_response
         character(len=80) :: token
         type(file_response), dimension(100) :: files
+        type(album_info), dimension(100) :: albums
     end type bucket_response
 
     ! Restriction
@@ -62,6 +87,12 @@ module waifuvault_models
         contains
         procedure :: create_error_response
     end type error_response
+
+    ! general_response
+    type, public :: general_response
+        logical :: success
+        character(len=4096) :: description
+    end type general_response
 
     contains
 
@@ -152,4 +183,22 @@ module waifuvault_models
             this%status = status
             this%message = message
         end subroutine create_error_response
+
+        subroutine album_append_file(this, file)
+            class(album_response) :: this
+            type(file_response) :: file
+            type(file_response), dimension(:), allocatable :: temp
+
+            if(size(this%files) - this%filecount == 0) then
+                allocate(temp(this%filecount * 2))
+                temp(1:this%filecount) = this%files
+                deallocate(this%files)
+                allocate(this%files(this%filecount * 2))
+                this%files = temp
+                deallocate(temp)
+            end if
+
+            this%filecount = this%filecount + 1
+            this%files(this%filecount) = file
+        end subroutine album_append_file
 end module waifuvault_models

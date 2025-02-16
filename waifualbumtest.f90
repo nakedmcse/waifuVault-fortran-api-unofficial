@@ -103,7 +103,6 @@ program test_waifuvault_albums
     print *, 'Album Token:', trim(disassociate_album_response%token)
     print *, 'Album Name:', trim(disassociate_album_response%name)
     print *, 'File count:', disassociate_album_response%filecount
-
     print *, ''
     call sleep(1)
 

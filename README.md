@@ -63,7 +63,7 @@ end if
 
 ## Usage
 
-This API contains 11 interactions:
+This API contains 19 interactions:
 
 1. [Upload File](#upload-file)
 2. [Get File Info](#get-file-info)
@@ -73,9 +73,17 @@ This API contains 11 interactions:
 6. [Create Bucket](#create-bucket)
 7. [Delete Bucket](#delete-bucket)
 8. [Get Bucket](#get-bucket)
-9. [Get Restrictions](#get-restrictions)
-10. [Clear Restrictions](#clear-restrictions)
-11. [Set Alternate Base URL](#set-alt-baseurl)
+9. [Create Album](#create-album)
+10. [Delete Album](#delete-album)
+11. [Get Album](#get-album)
+12. [Associate Files](#associate-files)
+13. [Disassociate Files](#disassociate-files)
+14. [Share Album](#share-album)
+15. [Revoke Album](#revoke-album)
+16. [Download Album](#download-album)
+17. [Get Restrictions](#get-restrictions)
+18. [Clear Restrictions](#clear-restrictions)
+19. [Set Alternate Base URL](#set-alt-baseurl)
 
 You need to include the module files in your code for the package:
 
@@ -414,6 +422,211 @@ print *, 'File 1 Token:', trim(get_response%files(1)%token)
 print *, 'File 1 URL:', trim(get_response%files(1)%url)
 print *, 'File 2 Token:', trim(get_response%files(2)%token)
 print *, 'File 2 URL:', trim(get_response%files(2)%url)
+```
+
+### Create Album<a id="create-album"></a>
+Albums are shareable collections of files that exist within a bucket.
+
+To create an album, you use the `createAlbum` function and supply a bucket token and name.
+
+The function takes the following parameters:
+
+| Option        | Type      | Description                         | Required | Extra info        |
+|---------------|-----------|-------------------------------------|----------|-------------------|
+| `bucketToken` | `string`  | The token of the bucket             | true     |                   |
+| `name`        | `string`  | The name of the album to be created | true     |                   |
+
+This will respond with an album object containing the name and token of the album.
+
+```fortran
+type(album_response) :: create_album_response
+
+create_album_response = createAlbum('some-album-token', 'test-album');
+print *, '--Create Album Response--'
+print *, 'Album Token:', trim(create_album_response%token)
+print *, 'Album Name:', trim(create_album_response%name)
+print *, ''
+```
+
+### Delete Album<a id="delete-album"></a>
+To delete an album, you use the `deleteAlbum` function and supply the album token and a boolean indication of whether
+or not the files contained in the album should be deleted or not.  If you chose false, the files will be returned to the
+bucket.
+
+The function takes the following parameters:
+
+| Option        | Type     | Description                         | Required | Extra info        |
+|---------------|----------|-------------------------------------|----------|-------------------|
+| `albumToken`  | `string` | The private token of the album      | true     |                   |
+| `deleteFiles` | `bool`   | Whether the files should be deleted | true     |                   |
+
+> **NOTE:** If `deleteFiles` is set to True, the files will be permanently deleted
+
+This will respond with a boolean indicating success.
+
+```fortran
+logical :: delete_album_response
+
+delete_album_response = deleteAlbum('some-album-token', .false.)
+print *, '--Delete Album Response--'
+print *, 'Response:', delete_album_response
+print *, ''
+```
+
+### Get Album<a id="get-album"></a>
+To get the contents of an album, you use the `getAlbum` function and supply the album token.  The token must be the private token.
+
+The function takes the following parameters:
+
+| Option  | Type     | Description                    | Required | Extra info |
+|---------|----------|--------------------------------|----------|------------|
+| `token` | `string` | The private token of the album | true     |            |
+
+This will respond with the album object containing the album information and files contained within the album.
+
+```fortran
+type(album_response) :: get_album_response
+
+get_album_response = getAlbum('some-album-token');
+print *, '--Get Album Response--'
+print *, 'Album Token:', trim(get_album_response%token)
+print *, 'Album Name:', trim(get_album_response%name)
+print *, 'Album Public Token:', trim(get_album_response%publicToken)
+print *, ''
+```
+
+### Associate Files<a id="associate-files"></a>
+To add files to an album, you use the `associateFiles` function and supply the private album token and
+a list of file tokens.
+
+The function takes the following parameters:
+
+| Option  | Type           | Description                         | Required | Extra info |
+|---------|----------------|-------------------------------------|----------|------------|
+| `token` | `string`       | The private token of the album      | true     |            |
+| `files` | `list[string]` | List of file tokens to add to album | true     |            |
+| `count` | `int`          | Count of files in list              | true     |            |
+
+This will respond with the new album object containing the added files.
+
+```fortran
+type(album_response) :: associate_album_response
+character(len=80), dimension(100) :: file_tokens
+
+file_tokens(1) = 'some-file-token'
+file_tokens(2) = 'some-other-file-token'
+
+associate_album_response = associateFiles('some-album-token',file_tokens,2)
+print *, '--Associate Album Response--'
+print *, 'Album Token:', trim(associate_album_response%token)
+print *, 'Album Name:', trim(associate_album_response%name)
+print *, 'File 1 token:', trim(associate_album_response%files(1)%token)
+print *, 'File 2 token:', trim(associate_album_response%files(2)%token)
+print *, ''
+```
+
+### Disassociate Files<a id="disassociate-files"></a>
+To remove files from an album, you use the `disassociateFiles` function and supply the private album token and
+a list of file tokens.
+
+The function takes the following parameters:
+
+| Option  | Type           | Description                              | Required | Extra info |
+|---------|----------------|------------------------------------------|----------|------------|
+| `token` | `string`       | The private token of the album           | true     |            |
+| `files` | `list[string]` | List of file tokens to remove from album | true     |            |
+| `count` | `int`          | Count of files in list                   | true     |            |
+
+This will respond with the new album object with the files removed.
+
+```fortran
+type(album_response) :: disassociate_album_response
+character(len=80), dimension(100) :: file_tokens
+
+file_tokens(1) = 'some-file-token'
+file_tokens(2) = 'some-other-file-token'
+
+disassociate_album_response = disassociateFiles('some-album-token',file_tokens,2)
+print *, '--Disassociate Album Response--'
+print *, 'Album Token:', trim(associate_album_response%token)
+print *, 'Album Name:', trim(associate_album_response%name)
+print *, 'File count:', disassociate_album_response%filecount
+print *, ''
+```
+
+### Share Album<a id="share-album"></a>
+To share an album, so it contents can be accessed from a public URL, you use the `shareAlbum` function and
+supply the private token.
+
+The function takes the following parameters:
+
+| Option  | Type           | Description                         | Required | Extra info |
+|---------|----------------|-------------------------------------|----------|------------|
+| `token` | `string`       | The private token of the album      | true     |            |
+
+This will respond with the public URL with which the album can be found.
+
+```fortran
+character(len=4096) :: share_album_response
+
+share_album_response = shareAlbum('some-album-token')
+print *, '--Share Album Response--'
+print *, 'Response:', trim(share_album_response)
+print *, ''
+```
+
+> **NOTE:** The public album token can now be found in the `getAlbum` results
+
+### Revoke Album<a id="revoke-album"></a>
+To revoke the sharing of an album, so it will no longer be accessible publicly, you use the `revokeAlbum` function
+and supply the private token.
+
+The function takes the following parameters:
+
+| Option  | Type           | Description                         | Required | Extra info |
+|---------|----------------|-------------------------------------|----------|------------|
+| `token` | `string`       | The private token of the album      | true     |            |
+
+This will respond with a boolean True if the album was revoked.
+
+```fortran
+logical :: revoke_album_response
+
+revoke_album_response = revokeAlbum('some-album-token')
+print *, '--Revoke Album Response--'
+print *, 'Response:', revoke_album_response
+print *, ''
+```
+
+> **NOTE:** Once revoked, the URL for sharing is destroyed.  If the album is later shared again, the URL issued will be different.
+
+### Download Album<a id="download-album"></a>
+To download the contents of an album as a zip file, you use the `downloadAlbum` function and supply a private or public
+token for the album.
+
+You can also supply the file ids as an array to selectively download files. these ids can be found as part of the
+get info response.
+
+The zip file will be returned as a memory stream buffer.
+
+The function takes the following parameters:
+
+| Option    | Type           | Description                              | Required | Extra info                                               |
+|-----------|----------------|------------------------------------------|----------|----------------------------------------------------------|
+| `token`   | `string`       | The private or public token of the album | true     |                                                          |
+| `files`   | `int[]`        | The ids of the files to download         | true     | the ids can be found as part of the `WaifuFile` response |
+| `count`   | `int`          | The number of files to download          | true     |                                                          |
+| `contents | `MemoryStream` | The memory stream to hold the download   | true     |                                                          |
+
+
+```fortran
+type(response_type) :: buffer
+integer, dimension(256) :: files
+
+call downloadAlbum(trim(create_album_response%token), files, 0, buffer)
+print *, '--Download Album Response--'
+print *, 'File Length:', len_trim(buffer%content)
+print *, ''
 ```
 
 ### Get Restrictions<a id="get-restrictions"></a>

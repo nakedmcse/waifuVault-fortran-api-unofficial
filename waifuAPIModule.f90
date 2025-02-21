@@ -659,11 +659,19 @@ module waifuvault_api
             character(len=:), allocatable :: splits(:), vals(:), cleaned
             type(bucket_response) :: res
             type(file_options) :: options
+            type(file_response) :: file
+            type(album_info) :: album
             logical :: firstToken
-            integer :: i,j
+            integer :: filecomplete, albumcomplete
+
+            res%filecount = 0
+            allocate(res%files(1))
+            res%albumcount = 0
+            allocate(res%albums(1))
 
             call split_string(trim(body), ',', splits)
-            j = 0
+            filecomplete = 0
+            albumcomplete = 0
             firstToken = .true.
             do i = 1, size(splits)
                 cleaned = ''
@@ -672,20 +680,24 @@ module waifuvault_api
                 if (vals(1) == 'token' .and. firstToken) then
                     res%token = trim(vals(2))
                     firstToken = .false.
+                elseif (fileComplete == 3) then
+                    call res%bucket_append_file(file)
+                    file%token = ''
+                    file%retentionPeriod = ''
+                    file%url = ''
+                    fileComplete = 0
                 elseif (vals(1) == 'token') then
-                    if(j<100) then
-                        j = j + 1
-                    end if
-                    res%files(j)%token = trim(vals(2))
+                    file%token = trim(vals(2))
+                    filecomplete = filecomplete + 1
                 elseif (vals(2) == 'token') then
-                    if(j<100) then
-                        j = j + 1
-                    end if
-                    res%files(j)%token = trim(vals(3))
+                    file%token = trim(vals(3))
+                    filecomplete = filecomplete + 1
                 elseif (vals(1) == 'url') then
-                    res%files(j)%url = trim(vals(2)) // ':' // trim(vals(3))
+                    file%url = trim(vals(2)) // ':' // trim(vals(3))
+                    filecomplete = filecomplete + 1
                 elseif (vals(1) == 'retentionPeriod') then
-                    res%files(j)%retentionPeriod = trim(vals(2))
+                    file%retentionPeriod = trim(vals(2))
+                    filecomplete = filecomplete + 1
                 end if
             end do
         end function deserializeBucketResponse
@@ -722,6 +734,9 @@ module waifuvault_api
                     res%dateCreated = stringToInt(vals(2))
                 elseif (fileComplete == 3) then
                     call res%album_append_file(file)
+                    file%token = ''
+                    file%retentionPeriod = ''
+                    file%url = ''
                     fileComplete = 0
                 elseif (vals(1) == 'token') then
                     file%token = trim(vals(2))

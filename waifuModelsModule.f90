@@ -241,4 +241,5 @@ module waifuvault_models
             this%albumcount = this%albumcount + 1
             this%albums(this%albumcount) = album
         end subroutine bucket_append_album
+
 end module waifuvault_models

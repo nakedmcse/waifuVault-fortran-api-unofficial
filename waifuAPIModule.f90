@@ -661,8 +661,8 @@ module waifuvault_api
             type(file_options) :: options
             type(file_response) :: file
             type(album_info) :: album
-            logical :: firstToken
-            integer :: filecomplete, albumcomplete
+            logical :: firstToken, isAlbum
+            integer :: filecomplete, albumcomplete, i
 
             res%filecount = 0
             allocate(res%files(1))
@@ -673,31 +673,68 @@ module waifuvault_api
             filecomplete = 0
             albumcomplete = 0
             firstToken = .true.
+            isAlbum = .false.
             do i = 1, size(splits)
                 cleaned = ''
                 call remove_characters(trim(splits(i)),'"{}[]',cleaned)
                 call split_string(cleaned, ':', vals)
+                if (vals(1) == 'albums') then
+                    isAlbum = .true.
+                elseif (vals(1) == 'files') then
+                    isAlbum = .false.
+                end if
                 if (vals(1) == 'token' .and. firstToken) then
                     res%token = trim(vals(2))
                     firstToken = .false.
-                elseif (fileComplete == 3) then
-                    call res%bucket_append_file(file)
-                    file%token = ''
-                    file%retentionPeriod = ''
-                    file%url = ''
-                    fileComplete = 0
                 elseif (vals(1) == 'token') then
-                    file%token = trim(vals(2))
-                    filecomplete = filecomplete + 1
-                elseif (vals(2) == 'token') then
-                    file%token = trim(vals(3))
-                    filecomplete = filecomplete + 1
+                    if(isAlbum) then
+                        album%token = trim(vals(2))
+                        albumcomplete = albumcomplete + 1
+                    else
+                        file%token = trim(vals(2))
+                        filecomplete = filecomplete + 1
+                    end if
+                elseif (vals(2) == 'token' .and. vals(1) /= 'album') then
+                    if(isAlbum) then
+                        album%token = trim(vals(3))
+                        albumcomplete = albumcomplete + 1
+                    else
+                        file%token = trim(vals(3))
+                        filecomplete = filecomplete + 1
+                    end if
                 elseif (vals(1) == 'url') then
                     file%url = trim(vals(2)) // ':' // trim(vals(3))
                     filecomplete = filecomplete + 1
                 elseif (vals(1) == 'retentionPeriod') then
                     file%retentionPeriod = trim(vals(2))
                     filecomplete = filecomplete + 1
+                elseif (vals(1) == 'bucket' .and. isAlbum) then
+                    album%bucket = trim(vals(2))
+                    albumcomplete = albumcomplete + 1
+                elseif (vals(1) == 'publicToken' .and. isAlbum) then
+                    album%publicToken = trim(vals(2))
+                    albumcomplete = albumcomplete + 1
+                elseif (vals(1) == 'name' .and. isAlbum) then
+                    album%name = trim(vals(2))
+                    albumcomplete = albumcomplete + 1
+                elseif (vals(1) == 'dateCreated'.and. isAlbum) then
+                    album%dateCreated = stringToInt(vals(2))
+                    albumcomplete = albumcomplete + 1
+                end if
+                if (filecomplete == 3) then
+                    call res%bucket_append_file(file)
+                    file%token = ''
+                    file%retentionPeriod = ''
+                    file%url = ''
+                    fileComplete = 0
+                end if
+                if (albumcomplete == 5) then
+                    call res%bucket_append_album(album)
+                    album%token = ''
+                    album%bucket = ''
+                    album%publicToken = ''
+                    album%name = ''
+                    albumcomplete = 0
                 end if
             end do
         end function deserializeBucketResponse

@@ -95,6 +95,19 @@ program test_waifuvault_albums
     print *, ''
     call sleep(1)
 
+    ! Get Bucket
+    get_response = getBucket(trim(response%token))
+    print *, '--Get Bucket Response--'
+    print *, 'Token:', trim(get_response%token)
+    print *, 'File 1 Token:', trim(get_response%files(1)%token)
+    print *, 'File 1 URL:', trim(get_response%files(1)%url)
+    print *, 'File 2 Token:', trim(get_response%files(2)%token)
+    print *, 'File 2 URL:', trim(get_response%files(2)%url)
+    print *, 'Album 1 Token:', trim(get_response%albums(1)%token)
+    print *, 'Album 1 Name:', trim(get_response%albums(1)%name)
+    print *, ''
+    call sleep(1)
+
     ! Disassociate Files
     file_tokens(1) = trim(realfile1_response%token)
     file_tokens(2) = trim(realfile2_response%token)
@@ -110,17 +123,6 @@ program test_waifuvault_albums
     delete_album_response = deleteAlbum(trim(create_album_response%token), .false.)
     print *, '--Delete Album Response--'
     print *, 'Response:', delete_album_response
-    print *, ''
-    call sleep(1)
-
-    ! Get Bucket
-    get_response = getBucket(trim(response%token))
-    print *, '--Get Bucket Response--'
-    print *, 'Token:', trim(get_response%token)
-    print *, 'File 1 Token:', trim(get_response%files(1)%token)
-    print *, 'File 1 URL:', trim(get_response%files(1)%url)
-    print *, 'File 2 Token:', trim(get_response%files(2)%token)
-    print *, 'File 2 URL:', trim(get_response%files(2)%url)
     print *, ''
     call sleep(1)
 

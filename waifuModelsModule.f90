@@ -224,7 +224,7 @@ module waifuvault_models
             this%files(this%filecount) = file
         end subroutine bucket_append_file
 
-        subroutine bcuket_append_album(this, album)
+        subroutine bucket_append_album(this, album)
             class(bucket_response) :: this
             type(album_info) :: album
             type(album_info), dimension(:), allocatable :: temp

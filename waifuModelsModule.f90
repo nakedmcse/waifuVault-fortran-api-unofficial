@@ -64,8 +64,12 @@ module waifuvault_models
     ! bucket_response
     type, public :: bucket_response
         character(len=80) :: token
-        type(file_response), dimension(100) :: files
-        type(album_info), dimension(100) :: albums
+        integer :: filecount, albumcount
+        type(file_response), dimension(:), allocatable :: files
+        type(album_info), dimension(:), allocatable :: albums
+        contains
+        procedure :: bucket_append_file
+        procedure :: bucket_append_album
     end type bucket_response
 
     ! Restriction
@@ -201,4 +205,41 @@ module waifuvault_models
             this%filecount = this%filecount + 1
             this%files(this%filecount) = file
         end subroutine album_append_file
+
+        subroutine bucket_append_file(this, file)
+            class(bucket_response) :: this
+            type(file_response) :: file
+            type(file_response), dimension(:), allocatable :: temp
+
+            if(size(this%files) - this%filecount == 0) then
+                allocate(temp(this%filecount * 2))
+                temp(1:this%filecount) = this%files
+                deallocate(this%files)
+                allocate(this%files(this%filecount * 2))
+                this%files = temp
+                deallocate(temp)
+            end if
+
+            this%filecount = this%filecount + 1
+            this%files(this%filecount) = file
+        end subroutine bucket_append_file
+
+        subroutine bucket_append_album(this, album)
+            class(bucket_response) :: this
+            type(album_info) :: album
+            type(album_info), dimension(:), allocatable :: temp
+
+            if(size(this%albums) - this%albumcount == 0) then
+                allocate(temp(this%albumcount * 2))
+                temp(1:this%albumcount) = this%albums
+                deallocate(this%albums)
+                allocate(this%albums(this%albumcount * 2))
+                this%albums = temp
+                deallocate(temp)
+            end if
+
+            this%albumcount = this%albumcount + 1
+            this%albums(this%albumcount) = album
+        end subroutine bucket_append_album
+
 end module waifuvault_models

@@ -659,33 +659,82 @@ module waifuvault_api
             character(len=:), allocatable :: splits(:), vals(:), cleaned
             type(bucket_response) :: res
             type(file_options) :: options
-            logical :: firstToken
-            integer :: i,j
+            type(file_response) :: file
+            type(album_info) :: album
+            logical :: firstToken, isAlbum
+            integer :: filecomplete, albumcomplete, i
+
+            res%filecount = 0
+            allocate(res%files(1))
+            res%albumcount = 0
+            allocate(res%albums(1))
 
             call split_string(trim(body), ',', splits)
-            j = 0
+            filecomplete = 0
+            albumcomplete = 0
             firstToken = .true.
+            isAlbum = .false.
             do i = 1, size(splits)
                 cleaned = ''
                 call remove_characters(trim(splits(i)),'"{}[]',cleaned)
                 call split_string(cleaned, ':', vals)
+                if (vals(1) == 'albums') then
+                    isAlbum = .true.
+                elseif (vals(1) == 'files') then
+                    isAlbum = .false.
+                end if
                 if (vals(1) == 'token' .and. firstToken) then
                     res%token = trim(vals(2))
                     firstToken = .false.
                 elseif (vals(1) == 'token') then
-                    if(j<100) then
-                        j = j + 1
+                    if(isAlbum) then
+                        album%token = trim(vals(2))
+                        albumcomplete = albumcomplete + 1
+                    else
+                        file%token = trim(vals(2))
+                        filecomplete = filecomplete + 1
                     end if
-                    res%files(j)%token = trim(vals(2))
-                elseif (vals(2) == 'token') then
-                    if(j<100) then
-                        j = j + 1
+                elseif (vals(2) == 'token' .and. vals(1) /= 'album') then
+                    if(isAlbum) then
+                        album%token = trim(vals(3))
+                        albumcomplete = albumcomplete + 1
+                    else
+                        file%token = trim(vals(3))
+                        filecomplete = filecomplete + 1
                     end if
-                    res%files(j)%token = trim(vals(3))
                 elseif (vals(1) == 'url') then
-                    res%files(j)%url = trim(vals(2)) // ':' // trim(vals(3))
+                    file%url = trim(vals(2)) // ':' // trim(vals(3))
+                    filecomplete = filecomplete + 1
                 elseif (vals(1) == 'retentionPeriod') then
-                    res%files(j)%retentionPeriod = trim(vals(2))
+                    file%retentionPeriod = trim(vals(2))
+                    filecomplete = filecomplete + 1
+                elseif (vals(1) == 'bucket' .and. isAlbum) then
+                    album%bucket = trim(vals(2))
+                    albumcomplete = albumcomplete + 1
+                elseif (vals(1) == 'publicToken' .and. isAlbum) then
+                    album%publicToken = trim(vals(2))
+                    albumcomplete = albumcomplete + 1
+                elseif (vals(1) == 'name' .and. isAlbum) then
+                    album%name = trim(vals(2))
+                    albumcomplete = albumcomplete + 1
+                elseif (vals(1) == 'dateCreated'.and. isAlbum) then
+                    album%dateCreated = stringToInt(vals(2))
+                    albumcomplete = albumcomplete + 1
+                end if
+                if (filecomplete == 3) then
+                    call res%bucket_append_file(file)
+                    file%token = ''
+                    file%retentionPeriod = ''
+                    file%url = ''
+                    fileComplete = 0
+                end if
+                if (albumcomplete == 5) then
+                    call res%bucket_append_album(album)
+                    album%token = ''
+                    album%bucket = ''
+                    album%publicToken = ''
+                    album%name = ''
+                    albumcomplete = 0
                 end if
             end do
         end function deserializeBucketResponse
@@ -722,6 +771,9 @@ module waifuvault_api
                     res%dateCreated = stringToInt(vals(2))
                 elseif (fileComplete == 3) then
                     call res%album_append_file(file)
+                    file%token = ''
+                    file%retentionPeriod = ''
+                    file%url = ''
                     fileComplete = 0
                 elseif (vals(1) == 'token') then
                     file%token = trim(vals(2))

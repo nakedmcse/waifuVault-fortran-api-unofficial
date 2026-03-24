@@ -12,7 +12,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
+    - name: Update repos
+      run: sudo apt-get update
     - name: Install Dependencies
       run: sudo apt-get install libcurl4-openssl-dev
     - name: Setup GCC

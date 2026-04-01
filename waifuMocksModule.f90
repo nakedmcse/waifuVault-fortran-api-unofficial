@@ -2,9 +2,11 @@
 module waifuvault_mocks
     implicit none
     use http_callback
+    use curl
     type, public :: dispatch_mock_type
         integer :: calls
         integer :: http_code
+        integer :: curl_code
         character(len=:), allocatable :: target_url
         character(len=:), allocatable :: target_method
         character(len=:), allocatable :: fields
@@ -33,6 +35,7 @@ module waifuvault_mocks
             class(dispatch_mock) :: this
             this%calls = 0
             this%http_code = 200
+            this%curl_code = CURLE_OK
             this%target_url = ""
             this%target_method = ""
             this%fields = ""

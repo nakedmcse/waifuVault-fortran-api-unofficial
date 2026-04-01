@@ -3,6 +3,9 @@ module waifuvault_api
     use, intrinsic :: iso_c_binding
     use, intrinsic :: iso_fortran_env
     use waifuvault_models
+#ifdef WAIFUVAULT_UNIT_TEST
+    use waifuvault_mocks
+#endif
     use waifuvault_utils
     use curl
     use http_callback
@@ -61,6 +64,7 @@ module waifuvault_api
             type(c_ptr) :: headers
             integer :: rc
 
+#ifndef WAIFUVAULT_UNIT_TEST
             curl_ptr = curl_easy_init()
             rc = curl_easy_setopt(curl_ptr, CURLOPT_URL, url)
             rc = curl_easy_setopt(curl_ptr, CURLOPT_CUSTOMREQUEST, request_type)
@@ -75,6 +79,13 @@ module waifuvault_api
                 rc = curl_easy_setopt(curl_ptr, CURLOPT_POSTFIELDSIZE, len(fields))
             end if
             rc = curl_easy_perform(curl_ptr)
+#else
+            dispatch_mock%calls = dispatch_mock%calls + 1
+            disaptch_mock%target_url = url
+            dispatch_mock%target_method = request_type
+            dispatch_mock%fields = fields
+            rc = dispatch_mock%curl_code
+#endif
         end subroutine dispatch_curl
 
         subroutine setAltBaseURL(alt_base_url)

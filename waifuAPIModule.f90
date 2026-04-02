@@ -84,6 +84,7 @@ module waifuvault_api
             dispatch_mock%target_url = url
             dispatch_mock%target_method = request_type
             dispatch_mock%fields = fields
+            body%content = dispatch_mock%response%content
             rc = dispatch_mock%curl_code
 #endif
         end subroutine dispatch_curl

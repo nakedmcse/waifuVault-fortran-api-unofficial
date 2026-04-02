@@ -6,17 +6,21 @@ program waifuvault_unit_tests
     use waifuvault_api
     implicit none
 
-#define ASSERT(condition, message) \
-    if (.not. (condition)) then; \
-        print *, "Assertion failed: ", message; \
-        print *, "File: ", __FILE__, ", Line: ", __LINE__; \
-        error stop; \
-    endif
-
     ! Tests
+    call openCurl()
     call test_delete()
+    call closeCurl()
 
     contains
+        subroutine assert(condition, message)
+            logical :: condition
+            character(len=*) :: message
+            if (.not.(condition)) then
+                print *, "Assertion failed: ", message
+                error stop
+            end if
+        end subroutine assert
+
         subroutine test_delete()
             ! Given
             logical :: result
@@ -27,10 +31,10 @@ program waifuvault_unit_tests
             result = deleteFile("test-token")
 
             ! Then
-            ASSERT(dispatch_mock%calls == 1, "Delete should call dispatch exactly once")
-            ASSERT(result, "Delete should return true")
-            ASSERT(dispatch_mock%target_method == "DELETE", "Delete should use DELETE method")
-            ASSERT(dispatch_mock%target_url == "https://waifuvault.moe/rest/test-token", "Delete target URL is wrong")
+            call assert(dispatch_mock%calls == 1, "Delete should call dispatch exactly once")
+            call assert(result, "Delete should return true")
+            call assert(dispatch_mock%target_method == "DELETE", "Delete should use DELETE method: " // dispatch_mock%target_method)
+            call assert(dispatch_mock%target_url == "https://waifuvault.moe/rest/test-token", "Delete target URL is wrong: " // dispatch_mock%target_url)
             print *,"Delete test passed"
         end subroutine test_delete
 end program waifuvault_unit_tests

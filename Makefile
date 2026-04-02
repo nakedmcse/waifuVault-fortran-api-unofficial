@@ -32,7 +32,7 @@ testingsdk: httpcallbackModule.f90 waifuModelsModule.f90 waifuUtilsModule.f90 wa
 	rm -f *.o
 
 unittests: lib-waifuvault.a libcurl/libfortran-curl.a waifuUnitTests.f90
-	gfortran -cpp -o waifuunittests lib-waifuvault.a libcurl/libfortran-curl.a waifuUnitTests.f90 -lcurl
+	gfortran -o waifuunittests lib-waifuvault.a libcurl/libfortran-curl.a waifuUnitTests.f90 -lcurl
 
 tests: lib-waifuvault.a libcurl/libfortran-curl.a waifutest.f90 waifubuckettest.f90 waifurestrictiontest.f90
 	gfortran -o waifutest lib-waifuvault.a libcurl/libfortran-curl.a waifutest.f90 -lcurl

@@ -81,7 +81,7 @@ module waifuvault_api
             rc = curl_easy_perform(curl_ptr)
 #else
             dispatch_mock%calls = dispatch_mock%calls + 1
-            disaptch_mock%target_url = url
+            dispatch_mock%target_url = url
             dispatch_mock%target_method = request_type
             dispatch_mock%fields = fields
             rc = dispatch_mock%curl_code

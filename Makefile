@@ -2,6 +2,8 @@ all: curl sdk tests
 
 build: curl sdk
 
+buildunittests: curl testingsdk unittests
+
 curl: libcurl/curl.f90 libcurl/curl_easy.f90 libcurl/curl_multi.f90 libcurl/curl_urlapi.f90 libcurl/curl_util.f90 libcurl/curl_macro.c
 	gcc -o libcurl/curl_macro.o -c libcurl/curl_macro.c
 	gfortran -o libcurl/curl_util.o -c libcurl/curl_util.f90
@@ -20,6 +22,18 @@ sdk: httpcallbackModule.f90 waifuModelsModule.f90 waifuUtilsModule.f90 waifuAPIM
 	ar rcs lib-waifuvault.a httpcallbackModule.o waifuModelsModule.o waifuUtilsModule.o waifuAPIModule.o
 	rm -f *.o
 
+testingsdk: httpcallbackModule.f90 waifuModelsModule.f90 waifuUtilsModule.f90 waifuAPIModule.f90 waifuMocksModule.f90
+	gfortran -c httpcallbackModule.f90
+	gfortran -c waifuModelsModule.f90
+	gfortran -c waifuUtilsModule.f90
+	gfortran -c waifuMocksModule.f90
+	gfortran -DWAIFUVAULT_UNIT_TEST -cpp -c waifuAPIModule.f90
+	ar rcs lib-waifuvault.a httpcallbackModule.o waifuModelsModule.o waifuUtilsModule.o waifuAPIModule.o waifuMocksModule.o
+	rm -f *.o
+
+unittests: lib-waifuvault.a libcurl/libfortran-curl.a waifuUnitTests.f90
+	gfortran -cpp -o waifuunittests lib-waifuvault.a libcurl/libfortran-curl.a waifuUnitTests.f90 -lcurl
+
 tests: lib-waifuvault.a libcurl/libfortran-curl.a waifutest.f90 waifubuckettest.f90 waifurestrictiontest.f90
 	gfortran -o waifutest lib-waifuvault.a libcurl/libfortran-curl.a waifutest.f90 -lcurl
 	gfortran -o waifubuckettest lib-waifuvault.a libcurl/libfortran-curl.a waifubuckettest.f90 -lcurl
@@ -37,4 +51,5 @@ clean:
 	rm -f waifubuckettest
 	rm -f waifurestrictiontest
 	rm -f waifualbumtest
+	rm -f waifuunittests
 

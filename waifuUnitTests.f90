@@ -6,13 +6,12 @@ program waifuvault_unit_tests
     use waifuvault_api
     implicit none
 
-    #define ASSERT(condition, message) &
-        if (.not. (condition)) then; &
-            print *, "Assertion failed: ", message; &
-            print * &
-            print *, "File: ", __FILE__, ", Line: ", __LINE__; &
-            error stop; &
-        endif
+#define ASSERT(condition, message) \
+    if (.not. (condition)) then; \
+        print *, "Assertion failed: ", message; \
+        print *, "File: ", __FILE__, ", Line: ", __LINE__; \
+        error stop; \
+    endif
 
     ! Tests
     call test_delete()
@@ -21,7 +20,7 @@ program waifuvault_unit_tests
         subroutine test_delete()
             ! Given
             logical :: result
-            call dispatch_mock%clear_dispatch_mock(dispatch_mock)
+            call dispatch_mock%clear_dispatch_mock()
             dispatch_mock%response%content = response_delete_true
 
             ! When
@@ -29,7 +28,7 @@ program waifuvault_unit_tests
 
             ! Then
             ASSERT(dispatch_mock%calls == 1, "Delete should call dispatch exactly once")
-            ASSERT(result .eq. .TRUE., "Delete should return true")
+            ASSERT(result, "Delete should return true")
             ASSERT(dispatch_mock%target_method == "DELETE", "Delete should use DELETE method")
             ASSERT(dispatch_mock%target_url == "https://waifuvault.moe/rest/test-token", "Delete target URL is wrong")
             print *,"Delete test passed"

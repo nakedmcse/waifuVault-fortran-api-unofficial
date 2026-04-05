@@ -191,12 +191,13 @@ module waifuvault_api
             deallocate(body%content)
         end function createAlbum
 
-        function deleteAlbum(album_token, delete_files) result (res)
+        function deleteAlbum(album_token, delete_files) result (ret)
             character(len=*) :: album_token
             character(len=512) :: url
             type(c_ptr) :: headers = c_null_ptr
             type(response_type), target :: body
-            logical :: delete_files, res
+            logical :: delete_files, ret
+            type(general_response) :: res
             integer :: rc
 
             url = ''
@@ -205,7 +206,8 @@ module waifuvault_api
             call dispatch_curl(rc, 'DELETE', trim(url), c_null_ptr, body, '')
             call checkError(rc, body%content)
 
-            res = body%content(1:4) == 'true'
+            res = deserializeGeneralResponse(body%content)
+            ret = res%success
             deallocate(body%content)
         end function deleteAlbum
 
@@ -746,32 +748,6 @@ module waifuvault_api
                 end if
             end do
         end function deserializeAlbumResponse
-
-        function deserializeGeneralResponse(body) result (res)
-            type(general_response) :: res
-            character(len=*) :: body
-            character(len=:), allocatable :: splits(:), vals(:), cleaned
-            integer :: i
-
-            call split_string(trim(body), ',', splits)
-            do i = 1, size(splits)
-                cleaned = ''
-                call remove_characters(trim(splits(i)),'"{}[]',cleaned)
-                call split_string(cleaned, ':', vals)
-                if (vals(1) == 'success') then
-                    if (trim(vals(2)) == 'true') then
-                        res%success = .true.
-                    else
-                        res%success = .false.
-                    end if
-                elseif (vals(1) == 'description') then
-                    res%description = trim(vals(2))
-                    if(size(vals) > 2) then
-                        res%description = trim(res%description) // ':' // trim(vals(3))
-                    end if
-                end if
-            end do
-        end function deserializeGeneralResponse
 
         function deserializeRestrictionResponse(body) result (res)
             character(len=*) :: body

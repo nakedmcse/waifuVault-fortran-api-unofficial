@@ -4,6 +4,7 @@ module waifuvault_deserializers
     use waifuvault_models
     implicit none
     contains
+        ! AST to Object functions
         function album_info_from_ast(album_ast) result (album)
             type(json_node) :: album_ast, ret_ast
             type(album_info) :: album
@@ -68,6 +69,21 @@ module waifuvault_deserializers
             end if
         end function file_response_from_ast
 
+        function general_response_from_ast(general_ast) result (ret)
+            type(json_node) :: general_ast, ret_ast
+            type(general_response) :: ret
+            if(general_ast%node_type == "OBJECT") then
+                ret_ast = get_node(general_ast,".success")
+                ret%success = ret_ast%value_bool
+                ret_ast = get_node(general_ast,".description")
+                ret%description = ret_ast%value_string
+            else
+                ret%success = .false.
+                ret%description = ''
+            end if
+        end function general_response_from_ast
+
+        ! High level deserializers
         function deserializeResponse(body) result (res)
             character(len=*) :: body
             type(json_node) :: body_ast, options_ast, album_ast
@@ -89,6 +105,18 @@ module waifuvault_deserializers
             album_ast = get_node(body_ast,".album")
             res%album = album_info_from_ast(album_ast)
         end function deserializeResponse
+
+    function deserializeGeneralResponse(body) result (res)
+        type(general_response) :: res
+        type(json_node) :: body_ast
+        character(len=*) :: body
+
+        body_ast = parse_json(body)
+        if (associated(fjson_error)) then
+            print *, "Error parsing general response"
+            return
+        end if
+
+        res = general_response_from_ast(body_ast)
+    end function deserializeGeneralResponse
 end module waifuvault_deserializers
-
-

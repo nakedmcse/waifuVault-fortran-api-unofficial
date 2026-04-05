@@ -12,6 +12,7 @@ program waifuvault_unit_tests
     call test_file_upload()
     call test_file_info()
     call test_file_update()
+    call test_delete_album()
     call test_delete()
     call closeCurl()
 
@@ -97,6 +98,21 @@ program waifuvault_unit_tests
             call assert(res%retentionPeriod == "10 minutes", "File Update retention period wrong")
             print *,"File Update test passed"
         end subroutine test_file_update
+
+        subroutine test_delete_album()
+            ! Given
+            logical :: res
+            call dispatch_mock%clear_dispatch_mock()
+            dispatch_mock%response%content = response_general_true
+            ! When
+            res = deleteAlbum("test-album",.true.)
+            ! Then
+            call assert(dispatch_mock%calls == 1, "Delete album should call dispatch exactly once")
+            call assert(dispatch_mock%target_method == "DELETE", "Delete Album should use DELETE method")
+            call assert(dispatch_mock%target_url == "https://waifuvault.moe/rest/album/test-album?deleteFiles=true", "Delete Album target URL wrong")
+            call assert(res,"Delete Album should return true")
+            print *,"Delete Album test passed"
+        end subroutine test_delete_album
 
         subroutine test_delete()
             ! Given

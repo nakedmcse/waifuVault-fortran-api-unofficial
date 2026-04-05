@@ -83,6 +83,46 @@ module waifuvault_deserializers
             end if
         end function general_response_from_ast
 
+        function bucket_response_from_ast(bucket_ast) result (res)
+            type(bucket_response) :: res
+            type(album_info) :: file_album
+            type(file_options) :: file_options
+            type(file_response) :: file_res
+            type(json_node) :: bucket_ast, files_ast, albums_ast, ret_ast
+            integer :: i
+            if(bucket_ast%node_type == "OBJECT") then
+                ret_ast = get_node(bucket_ast,".token")
+                res%token = ret_ast%value_string
+                files_ast = get_node(bucket_ast,".files")
+                if(files_ast%node_type == "ARRAY" .and. files_ast%child_nodes_count > 0) then
+                    do i = 1, files_ast%child_nodes_count
+                        file_res = file_response_from_ast(files_ast%child_nodes(i))
+                        ret_ast = get_node(files_ast%child_nodes(i),".options")
+                        file_res%options = options_from_ast(ret_ast)
+                        ret_ast = get_node(files_ast%child_nodes(i),".album")
+                        file_res%album = album_info_from_ast(ret_ast)
+                        call res%bucket_append_file(file_res)
+                    end do
+                else
+                    res%filecount = 0
+                end if
+
+                albums_ast = get_node(bucket_ast,".albums")
+                if(albums_ast%node_type == "ARRAY" .and. albums_ast%child_nodes_count > 0) then
+                    do i = 1, albums_ast%child_nodes_count
+                        file_album = album_info_from_ast(albums_ast%child_nodes(i))
+                        call res%bucket_append_album(file_album)
+                    end do
+                else
+                    res%albumcount = 0
+                end if
+            else
+                res%token = ''
+                res%filecount = 0
+                res%albumcount = 0
+            end if
+        end function bucket_response_from_ast
+
         ! High level deserializers
         function deserializeResponse(body) result (res)
             character(len=*) :: body
@@ -119,4 +159,18 @@ module waifuvault_deserializers
 
         res = general_response_from_ast(body_ast)
     end function deserializeGeneralResponse
+
+    function deserializeBucketResponse(body) result (res)
+        type(bucket_response) :: res
+        type(json_node) :: body_ast
+        character(len=*) :: body
+
+        body_ast = parse_json(body)
+        if (associated(fjson_error)) then
+            print *, "Error parsing bucket response"
+            return
+        end if
+
+        res = bucket_response_from_ast(body_ast)
+    end function deserializeBucketResponse
 end module waifuvault_deserializers

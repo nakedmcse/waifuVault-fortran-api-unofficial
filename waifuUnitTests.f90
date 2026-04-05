@@ -12,6 +12,7 @@ program waifuvault_unit_tests
     call test_file_upload()
     call test_file_info()
     call test_file_update()
+    call test_get_bucket()
     call test_delete_album()
     call test_delete()
     call closeCurl()
@@ -98,6 +99,25 @@ program waifuvault_unit_tests
             call assert(res%retentionPeriod == "10 minutes", "File Update retention period wrong")
             print *,"File Update test passed"
         end subroutine test_file_update
+
+        subroutine test_get_bucket()
+            ! Given
+            type(bucket_response) :: res
+            call dispatch_mock%clear_dispatch_mock()
+            dispatch_mock%response%content = response_used_bucket
+            ! When
+            res = getBucket("test-token")
+            ! Then
+            call assert(dispatch_mock%calls == 1, "Get Bucket should call dispatch exactly once")
+            call assert(dispatch_mock%target_method == "POST", "Get Bucket should use POST method")
+            call assert(dispatch_mock%fields == '{"bucket_token":"test-token"}', "Get Bucket fields wrong")
+            call assert(dispatch_mock%target_url == "https://waifuvault.moe/rest/bucket/get", "Get Bucket target URL wrong")
+            call assert(res%filecount == 2, "Get Bucket files count wrong")
+            call assert(res%files(1)%token == "0dd4b9b5-1e7e-4852-bdc5-54a79feb07c9", "Get Bucket file token 1 wrong")
+            call assert(res%albumcount == 1, "Get Bucket album count wrong")
+            call assert(res%albums(1)%token == "b96413f7-2e34-4691-8f44-6b9fcf83ca7c", "Get Bucket album token 1 wrong")
+            print *,"Get Bucket test passed"
+        end subroutine test_get_bucket
 
         subroutine test_delete_album()
             ! Given

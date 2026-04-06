@@ -153,31 +153,31 @@ module waifuvault_deserializers
             res%album = album_info_from_ast(album_ast)
         end function deserializeResponse
 
-    function deserializeGeneralResponse(body) result (res)
-        type(general_response) :: res
-        type(json_node) :: body_ast
-        character(len=*) :: body
+        function deserializeGeneralResponse(body) result (res)
+            type(general_response) :: res
+            type(json_node) :: body_ast
+            character(len=*) :: body
 
-        body_ast = parse_json(body)
-        if (associated(fjson_error)) then
-            print *, "Error parsing general response"
-            return
-        end if
+            body_ast = parse_json(body)
+            if (associated(fjson_error)) then
+                print *, "Error parsing general response"
+                return
+            end if
 
-        res = general_response_from_ast(body_ast)
-    end function deserializeGeneralResponse
+            res = general_response_from_ast(body_ast)
+        end function deserializeGeneralResponse
 
-    function deserializeBucketResponse(body) result (res)
-        type(bucket_response) :: res
-        type(json_node) :: body_ast
-        character(len=*) :: body
+        function deserializeBucketResponse(body) result (res)
+            type(bucket_response) :: res
+            type(json_node) :: body_ast
+            character(len=*) :: body
 
-        body_ast = parse_json(body)
-        if (associated(fjson_error)) then
-            print *, "Error parsing bucket response"
-            return
-        end if
+            body_ast = parse_json(body)
+            if (associated(fjson_error)) then
+                print *, "Error parsing bucket response"
+                return
+            end if
 
-        res = bucket_response_from_ast(body_ast)
-    end function deserializeBucketResponse
+            res = bucket_response_from_ast(body_ast)
+        end function deserializeBucketResponse
 end module waifuvault_deserializers

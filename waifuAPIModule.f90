@@ -612,31 +612,6 @@ module waifuvault_api
             error = ret_error
         end subroutine checkError
 
-        function deserializeRestrictionResponse(body) result (res)
-            character(len=*) :: body
-            character(len=:), allocatable :: splits(:), vals(:), cleaned
-            type(restriction_response) :: res
-            integer :: i,j
-
-            j = 1
-            call split_string(trim(body), ',', splits)
-            do i = 1, size(splits)
-                cleaned = ''
-                call remove_characters(trim(splits(i)),'"{}[]',cleaned)
-                call split_string(cleaned, ':', vals)
-                if (trim(vals(2)) == "MAX FILE SIZE") then
-                    res%restrictions(j)%type = "MAX_FILE_SIZE"
-                elseif (trim(vals(2)) == "BANNED MIME TYPE") then
-                    res%restrictions(j)%type = "BANNED_MIME_TYPE"
-                elseif (trim(vals(1)) == "value") then
-                    res%restrictions(j)%value = trim(vals(2))
-                    j = j + 1
-                elseif (len_trim(vals(1))>0 .and. trim(res%restrictions(j-1)%type) == "BANNED_MIME_TYPE") then
-                    res%restrictions(j-1)%value = trim(res%restrictions(j-1)%value) // "," // trim(vals(1))
-                end if
-            end do
-        end function deserializeRestrictionResponse
-
         function MIMEFile(seperator, filename, stringsize) result (res)
             character(len=*) :: seperator, filename, stringsize
             character(len=1024) :: res

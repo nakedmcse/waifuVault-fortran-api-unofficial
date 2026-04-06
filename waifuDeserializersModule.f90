@@ -83,6 +83,25 @@ module waifuvault_deserializers
             end if
         end function general_response_from_ast
 
+        function restriction_response_from_ast(restriction_ast) result (res)
+            type(json_node) :: restriction_ast, ret_ast
+            type(restriction_response) :: res
+            integer :: i
+            if(restriction_ast%node_type == "ARRAY" .and. restriction_ast%child_nodes_count > 0) then
+                do i = 1, restriction_ast%child_nodes_count
+                    ret_ast = get_node(restriction_ast%child_nodes(i),".type")
+                    res%restrictions(i)%type = ret_ast%value_string
+                    ret_ast = get_node(restriction_ast%child_nodes(i),".value")
+                    res%restrictions(i)%value = ret_ast%value_string
+                end do
+            else
+                do i = 1, 100
+                    res%restrictions(i)%type = ''
+                    res%restrictions(i)%value = ''
+                end do
+            end if
+        end function restriction_response_from_ast
+
         function album_response_from_ast(album_ast) result (res)
             type(album_response) :: res
             type(album_info) :: file_album
@@ -239,4 +258,18 @@ module waifuvault_deserializers
 
             res = album_response_from_ast(body_ast)
         end function deserializeAlbumResponse
+
+        function deserializeRestrictionResponse(body) result (res)
+            type(restriction_response) :: res
+            type(json_node) :: body_ast
+            character(len=*) :: body
+
+            body_ast = parse_json(body)
+            if (associated(fjson_error)) then
+                print *, "Error parsing restriction response"
+                return
+            end if
+
+            res = restriction_response_from_ast(body_ast)
+        end function deserializeRestrictionResponse
 end module waifuvault_deserializers

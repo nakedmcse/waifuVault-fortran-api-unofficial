@@ -16,6 +16,8 @@ program waifuvault_unit_tests
     call test_get_album()
     call test_delete_album()
     call test_delete()
+    call test_get_restrictions()
+    call test_clear_restrictions()
     call closeCurl()
 
     contains
@@ -172,4 +174,38 @@ program waifuvault_unit_tests
             call assert(dispatch_mock%target_url == "https://waifuvault.moe/rest/test-token", "Delete target URL is wrong: " // dispatch_mock%target_url)
             print *,"Delete test passed"
         end subroutine test_delete
+
+        subroutine test_get_restrictions()
+            ! Given
+            type(restriction_response) :: res
+            call dispatch_mock%clear_dispatch_mock()
+            dispatch_mock%response%content = response_restrictionsResponse
+            ! When
+            res = getRestrictions()
+            ! Then
+            call assert(dispatch_mock%calls == 1, "Get Restrictions should call dispatch exactly once")
+            call assert(dispatch_mock%target_method == "GET", "Get Album should use GET method")
+            call assert(dispatch_mock%target_url == "https://waifuvault.moe/rest/resources/restrictions", "Get Restrictions target URL wrong")
+            call assert(res%restrictions(1)%type == "MAX_FILE_SIZE", "Get Restrictions MAX_FILE_SIZE type wrong")
+            call assert(res%restrictions(1)%value == "100", "Get Restrictions MAX_FILE_SIZE value wrong")
+            call assert(res%restrictions(2)%type == "BANNED_MIME_TYPE", "Get Restrictions BANNED_MIME_TYPE type wrong")
+            call assert(res%restrictions(2)%value == "application/x-msdownload,application/x-executable", "Get Restrictions BANNED_MIME_TYPE value wrong")
+            print *,"Get Restrictions test passed"
+        end subroutine test_get_restrictions
+
+        subroutine test_clear_restrictions()
+            ! Given
+            type(restriction_response) :: res
+            call dispatch_mock%clear_dispatch_mock()
+            dispatch_mock%response%content = response_restrictionsResponse
+            ! When
+            res = clearRestrictions()
+            ! Then
+            call assert(dispatch_mock%calls == 0, "Clear Restrictions should not call dispatch")
+            call assert(res%restrictions(1)%type == "", "Clear Restrictions first type wrong")
+            call assert(res%restrictions(1)%value == "", "Clear Restrictions first value wrong")
+            call assert(res%restrictions(2)%type == "", "Clear Restrictions second type wrong")
+            call assert(res%restrictions(2)%value == "", "Clear Restrictions second value wrong")
+            print *,"Clear Restrictions test passed"
+        end subroutine test_clear_restrictions
 end program waifuvault_unit_tests

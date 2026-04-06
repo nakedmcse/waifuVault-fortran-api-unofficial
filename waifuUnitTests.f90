@@ -13,6 +13,7 @@ program waifuvault_unit_tests
     call test_file_info()
     call test_file_update()
     call test_get_bucket()
+    call test_get_album()
     call test_delete_album()
     call test_delete()
     call closeCurl()
@@ -118,6 +119,27 @@ program waifuvault_unit_tests
             call assert(res%albums(1)%token == "b96413f7-2e34-4691-8f44-6b9fcf83ca7c", "Get Bucket album token 1 wrong")
             print *,"Get Bucket test passed"
         end subroutine test_get_bucket
+
+        subroutine test_get_album()
+            ! Given
+            type(album_response) :: res
+            call dispatch_mock%clear_dispatch_mock()
+            dispatch_mock%response%content = response_album_with_files
+            ! When
+            res = getAlbum("test-token")
+            ! Then
+            call assert(dispatch_mock%calls == 1, "Get Album should call dispatch exactly once")
+            call assert(dispatch_mock%target_method == "GET", "Get Album should use GET method")
+            call assert(dispatch_mock%target_url == "https://waifuvault.moe/rest/album/test-token", "Get Album target URL wrong")
+            call assert(res%filecount == 2, "Get Album files count wrong")
+            call assert(res%name == "Something", "Get Album album name wrong")
+            call assert(res%token == "b96413f7-2e34-4691-8f44-6b9fcf83ca7c", "Get Album album token wrong")
+            call assert(res%publicToken == "ce8c7459-b26f-4844-b65a-4d1668308c8e", "Get Album album public token wrong")
+            call assert(res%bucket == "56a62473-d3ef-48f9-baef-3628a3d23549", "Get Album album bucket token wrong")
+            call assert(res%files(1)%token == "bb183720-58eb-44d6-9eff-d72536edf302", "Get Album file token 1 wrong")
+            call assert(res%files(2)%token == "49cc14d8-c4da-410a-91f7-09848f1e8466", "Get Album file token 2 wrong")
+            print *,"Get Album test passed"
+        end subroutine test_get_album
 
         subroutine test_delete_album()
             ! Given

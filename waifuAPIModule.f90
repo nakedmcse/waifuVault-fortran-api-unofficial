@@ -612,58 +612,6 @@ module waifuvault_api
             error = ret_error
         end subroutine checkError
 
-        function deserializeAlbumResponse(body) result (res)
-            type(album_response) :: res
-            character(len=*) :: body
-            character(len=:), allocatable :: splits(:), vals(:), cleaned
-            type(file_options) :: options
-            type(file_response) :: file
-            logical :: firstToken
-            integer :: i, fileComplete
-
-            res%filecount = 0
-            allocate(res%files(1))
-
-            call split_string(trim(body), ',', splits)
-            firstToken = .true.
-            fileComplete = 0
-            do i = 1, size(splits)
-                cleaned = ''
-                call remove_characters(trim(splits(i)),'"{}[]',cleaned)
-                call split_string(cleaned, ':', vals)
-                if (vals(1) == 'token' .and. firstToken) then
-                    res%token = trim(vals(2))
-                    firstToken = .false.
-                elseif (vals(1) == 'bucket') then
-                    res%bucket = trim(vals(2))
-                elseif (vals(1) == 'publicToken') then
-                    res%publicToken = trim(vals(2))
-                elseif (vals(1) == 'name') then
-                    res%name = trim(vals(2))
-                elseif (vals(1) == 'dateCreated') then
-                    res%dateCreated = stringToInt(vals(2))
-                elseif (fileComplete == 3) then
-                    call res%album_append_file(file)
-                    file%token = ''
-                    file%retentionPeriod = ''
-                    file%url = ''
-                    fileComplete = 0
-                elseif (vals(1) == 'token') then
-                    file%token = trim(vals(2))
-                    fileComplete = fileComplete + 1
-                elseif (vals(2) == 'token') then
-                    file%token = trim(vals(3))
-                    fileComplete = fileComplete + 1
-                elseif (vals(1) == 'url') then
-                    file%url = trim(vals(2)) // ':' // trim(vals(3))
-                    fileComplete = fileComplete + 1
-                elseif (vals(1) == 'retentionPeriod') then
-                    file%retentionPeriod = trim(vals(2))
-                    fileComplete = fileComplete + 1
-                end if
-            end do
-        end function deserializeAlbumResponse
-
         function deserializeRestrictionResponse(body) result (res)
             character(len=*) :: body
             character(len=:), allocatable :: splits(:), vals(:), cleaned

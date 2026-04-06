@@ -83,6 +83,52 @@ module waifuvault_deserializers
             end if
         end function general_response_from_ast
 
+        function album_response_from_ast(album_ast) result (res)
+            type(album_response) :: res
+            type(album_info) :: file_album
+            type(file_options) :: file_options
+            type(file_response) :: file_res
+            type(json_node) :: album_ast, files_ast, ret_ast
+            integer :: i
+            res%filecount = 0
+            allocate(res%files(1))
+            if(album_ast%node_type == "OBJECT") then
+                ret_ast = get_node(album_ast,".token")
+                res%token = ret_ast%value_string
+                ret_ast = get_node(album_ast,".publicToken")
+                res%publicToken = ret_ast%value_string
+                ret_ast = get_node(album_ast,".name")
+                res%name = ret_ast%value_string
+                ret_ast = get_node(album_ast,".bucketToken")
+                res%bucket = ret_ast%value_string
+                ret_ast = get_node(album_ast,".dateCreated")
+                res%dateCreated = ret_ast%value_int
+
+                files_ast = get_node(album_ast,".files")
+                if(files_ast%node_type == "ARRAY" .and. files_ast%child_nodes_count > 0) then
+                    do i = 1, files_ast%child_nodes_count
+                        file_res = file_response_from_ast(files_ast%child_nodes(i))
+                        ret_ast = get_node(files_ast%child_nodes(i),".options")
+
+                        file_res%options = options_from_ast(ret_ast)
+                        ret_ast = get_node(files_ast%child_nodes(i),".album")
+
+                        file_res%album = album_info_from_ast(ret_ast)
+                        call res%album_append_file(file_res)
+                    end do
+                else
+                    res%filecount = 0
+                end if
+            else
+                res%token = ''
+                res%publicToken = ''
+                res%name = ''
+                res%bucket = ''
+                res%dateCreated = 0
+                res%filecount = 0
+            end if
+        end function album_response_from_ast
+
         function bucket_response_from_ast(bucket_ast) result (res)
             type(bucket_response) :: res
             type(album_info) :: file_album
@@ -108,7 +154,6 @@ module waifuvault_deserializers
 
                         file_res%album = album_info_from_ast(ret_ast)
                         call res%bucket_append_file(file_res)
-
                     end do
                 else
                     res%filecount = 0
@@ -180,4 +225,18 @@ module waifuvault_deserializers
 
             res = bucket_response_from_ast(body_ast)
         end function deserializeBucketResponse
+
+        function deserializeAlbumResponse(body) result (res)
+            type(album_response) :: res
+            type(json_node) :: body_ast
+            character(len=*) :: body
+
+            body_ast = parse_json(body)
+            if (associated(fjson_error)) then
+                print *, "Error parsing album response"
+                return
+            end if
+
+            res = album_response_from_ast(body_ast)
+        end function deserializeAlbumResponse
 end module waifuvault_deserializers

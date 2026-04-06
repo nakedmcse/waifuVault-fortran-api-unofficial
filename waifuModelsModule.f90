@@ -1,5 +1,6 @@
 ! Waifuvault Fortran Models
 module waifuvault_models
+    use, intrinsic :: iso_fortran_env, only: int64
     implicit none
     ! file_upload
     type, public :: file_upload
@@ -32,7 +33,7 @@ module waifuvault_models
         character(len=80) :: publicToken
         character(len=512) :: name
         character(len=80) :: bucket
-        integer :: dateCreated
+        integer(int64) :: dateCreated
     end type album_info
 
     ! file_response
@@ -55,7 +56,8 @@ module waifuvault_models
         character(len=80) :: publicToken
         character(len=512) :: name
         character(len=80) :: bucket
-        integer :: dateCreated, filecount
+        integer(int64) :: dateCreated
+        integer :: filecount
         type(file_response), dimension(:), allocatable :: files
         contains
         procedure :: album_append_file

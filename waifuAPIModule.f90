@@ -394,7 +394,7 @@ module waifuvault_api
 
             url = trim(BASEURL) // '/bucket/get';
             headers = curl_slist_append(headers, ('Content-Type: application/json'))
-            content = '{"bucket_token": "' // trim(token) // '"}'
+            content = '{"bucket_token":"' // trim(token) // '"}'
 
             call dispatch_curl(rc, 'POST', url, headers, body, content)
             call curl_slist_free_all(headers)

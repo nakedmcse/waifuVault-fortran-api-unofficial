@@ -12,7 +12,9 @@ program waifuvault_unit_tests
     call test_file_upload()
     call test_file_info()
     call test_file_update()
+    call test_create_bucket()
     call test_get_bucket()
+    call test_delete_bucket()
     call test_get_album()
     call test_delete_album()
     call test_delete()
@@ -103,6 +105,21 @@ program waifuvault_unit_tests
             print *,"File Update test passed"
         end subroutine test_file_update
 
+        subroutine test_create_bucket()
+            ! Given
+            type(bucket_response) :: res
+            call dispatch_mock%clear_dispatch_mock()
+            dispatch_mock%response%content = response_empty_bucket
+            ! When
+            res = createBucket()
+            ! Then
+            call assert(dispatch_mock%calls == 1, "Create Bucket should call dispatch exactly once")
+            call assert(dispatch_mock%target_method == "GET", "Create Bucket should use GET method")
+            call assert(dispatch_mock%target_url == "https://waifuvault.moe/rest/bucket/create", "Create Bucket URL is wrong")
+            call assert(res%token == "test-bucket", "Create Bucket return token wrong")
+            print *,"Create Bucket test passed"
+        end subroutine test_create_bucket
+
         subroutine test_get_bucket()
             ! Given
             type(bucket_response) :: res
@@ -121,6 +138,21 @@ program waifuvault_unit_tests
             call assert(res%albums(1)%token == "b96413f7-2e34-4691-8f44-6b9fcf83ca7c", "Get Bucket album token 1 wrong")
             print *,"Get Bucket test passed"
         end subroutine test_get_bucket
+
+        subroutine test_delete_bucket()
+            ! Given
+            logical :: res
+            call dispatch_mock%clear_dispatch_mock()
+            dispatch_mock%response%content = response_delete_true
+            ! When
+            res = deleteBucket("test-token")
+            ! Then
+            call assert(dispatch_mock%calls == 1, "Delete Bucket should call dispatch exactly once")
+            call assert(dispatch_mock%target_method == "DELETE", "Delete Bucket should use DELETE method")
+            call assert(dispatch_mock%target_url == "https://waifuvault.moe/rest/bucket/test-token", "Delete Bucket URL is wrong")
+            call assert(res, "Delete Bucket should return true")
+            print *,"Delete Bucket test passed"
+        end subroutine test_delete_bucket
 
         subroutine test_get_album()
             ! Given

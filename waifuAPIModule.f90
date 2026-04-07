@@ -181,7 +181,7 @@ module waifuvault_api
 
             url = trim(BASEURL) // '/album/' // trim(bucket_token);
             headers = curl_slist_append(headers, ('Content-Type: application/json'))
-            content = '{"name": "' // trim(name) // '"}'
+            content = '{"name":"' // trim(name) // '"}'
 
             call dispatch_curl(rc, 'POST', url, headers, body, content)
             call curl_slist_free_all(headers)
@@ -240,7 +240,7 @@ module waifuvault_api
 
             url = trim(BASEURL) // '/album/' // trim(token) // '/associate'
             headers = curl_slist_append(headers, ('Content-Type: application/json'))
-            content = '{"fileTokens": ['
+            content = '{"fileTokens":['
             do i = 1, file_count
                 content = content // '"' // trim(file_tokens(i)) // '"'
                 if (i /= file_count) then
@@ -268,7 +268,7 @@ module waifuvault_api
 
             url = trim(BASEURL) // '/album/' // trim(token) // '/disassociate'
             headers = curl_slist_append(headers, ('Content-Type: application/json'))
-            content = '{"fileTokens": ['
+            content = '{"fileTokens":['
             do i = 1, file_count
                 content = content // '"' // trim(file_tokens(i)) // '"'
                 if (i /= file_count) then
@@ -333,12 +333,12 @@ module waifuvault_api
             type(c_ptr) :: headers = c_null_ptr
             integer :: file_count, rc, i
 
-            url = trim(BASEURL) // '/album/download' // trim(token)
+            url = trim(BASEURL) // '/album/download/' // trim(token)
             headers = curl_slist_append(headers, ('Content-Type: application/json'))
             content = '['
             do i = 1, file_count
                 stringInt = intToString(files(i))
-                content = content // stringInt
+                content = content // trim(stringInt)
                 if (i /= file_count) then
                     content = content // ','
                 end if

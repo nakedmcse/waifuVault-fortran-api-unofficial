@@ -15,6 +15,12 @@ program waifuvault_unit_tests
     call test_create_bucket()
     call test_get_bucket()
     call test_delete_bucket()
+    call test_create_album()
+    call test_share_album()
+    call test_revoke_album()
+    call test_associate_files()
+    call test_disassociate_files()
+    call test_download_album()
     call test_get_album()
     call test_delete_album()
     call test_delete()
@@ -153,6 +159,122 @@ program waifuvault_unit_tests
             call assert(res, "Delete Bucket should return true")
             print *,"Delete Bucket test passed"
         end subroutine test_delete_bucket
+
+        subroutine test_create_album()
+            ! Given
+            type(album_response) :: res
+            call dispatch_mock%clear_dispatch_mock()
+            dispatch_mock%response%content = response_album_new
+            ! When
+            res = createAlbum("test-bucket","test-name")
+            ! Then
+            call assert(dispatch_mock%calls == 1, "Create Album should call dispatch exactly once")
+            call assert(dispatch_mock%target_method == "POST", "Create Album should use POST method")
+            call assert(dispatch_mock%target_url == "https://waifuvault.moe/rest/album/test-bucket", "Create Album URL is wrong")
+            call assert(dispatch_mock%fields == '{"name":"test-name"}', "Create Album fields are wrong")
+            call assert(res%name == "test-name", "Create Album response name wrong")
+            call assert(res%token == "test-album", "Create Album response token wrong")
+            print *,"Create Album test passed"
+        end subroutine test_create_album
+
+        subroutine test_share_album()
+            ! Given
+            character(len=:), allocatable :: res
+            call dispatch_mock%clear_dispatch_mock()
+            dispatch_mock%response%content = response_general_true
+            ! When
+            res = shareAlbum("test-album")
+            ! Then
+            call assert(dispatch_mock%calls == 1, "Share Album should call dispatch exactly once")
+            call assert(dispatch_mock%target_method == "GET", "Share Album should use GET method")
+            call assert(dispatch_mock%target_url == "https://waifuvault.moe/rest/album/share/test-album", "Share Album URL is wrong")
+            call assert(res == "yes", "Share Album response wrong")
+            print *,"Share Album test passed"
+        end subroutine test_share_album
+
+        subroutine test_revoke_album()
+            ! Given
+            logical :: res
+            call dispatch_mock%clear_dispatch_mock()
+            dispatch_mock%response%content = response_general_true
+            ! When
+            res = revokeAlbum("test-album")
+            ! Then
+            call assert(dispatch_mock%calls == 1, "Revoke Album should call dispatch exactly once")
+            call assert(dispatch_mock%target_method == "GET", "Revoke Album should use GET method")
+            call assert(dispatch_mock%target_url == "https://waifuvault.moe/rest/album/revoke/test-album", "Revoke Album URL is wrong")
+            call assert(res, "Revoke Album response wrong")
+            print *,"Revoke Album test passed"
+        end subroutine test_revoke_album
+
+        subroutine test_download_album()
+            ! Given
+            integer, dimension(256) :: files
+            type(response_type) :: res
+            call dispatch_mock%clear_dispatch_mock()
+            dispatch_mock%response%content = response_file
+            files(1) = 6
+            files(2) = 7
+            ! When
+            call downloadAlbum("album-token",files,2,res)
+            ! Then
+            call assert(dispatch_mock%calls == 1, "Download Album should call dispatch exactly once")
+            call assert(dispatch_mock%target_method == "POST", "Download Album should use POST method")
+            call assert(dispatch_mock%target_url == "https://waifuvault.moe/rest/album/download/album-token", "Download Album URL is wrong")
+            call assert(dispatch_mock%fields == '[6,7]', "Download Album fields are wrong" // " " // dispatch_mock%fields)
+            call assert(res%content == response_file, "Download Album contents are wrong")
+            print *,"Download Album test passed"
+        end subroutine test_download_album
+
+        subroutine test_associate_files()
+            ! Given
+            type(album_response) :: res
+            character(len=80), dimension(100) :: files
+            call dispatch_mock%clear_dispatch_mock()
+            dispatch_mock%response%content = response_album_with_files
+            files(1) = "file-token-1"
+            files(2) = "file-token-2"
+            ! When
+            res = associateFiles("album-token",files,2)
+            ! Then
+            call assert(dispatch_mock%calls == 1, "Associate Files should call dispatch exactly once")
+            call assert(dispatch_mock%target_method == "POST", "Associate Files should use POST method")
+            call assert(dispatch_mock%target_url == "https://waifuvault.moe/rest/album/album-token/associate", "Associate Files URL is wrong")
+            call assert(dispatch_mock%fields == '{"fileTokens":["file-token-1","file-token-2"]}', "Associate Files fields are wrong")
+            call assert(res%filecount == 2, "Associate Files response files count wrong")
+            call assert(res%name == "Something", "Associate Files response album name wrong")
+            call assert(res%token == "b96413f7-2e34-4691-8f44-6b9fcf83ca7c", "Associate Files response album token wrong")
+            call assert(res%publicToken == "ce8c7459-b26f-4844-b65a-4d1668308c8e", "Associate Files response album public token wrong")
+            call assert(res%bucket == "56a62473-d3ef-48f9-baef-3628a3d23549", "Associate Files response album bucket token wrong")
+            call assert(res%files(1)%token == "bb183720-58eb-44d6-9eff-d72536edf302", "Associate Files response file token 1 wrong")
+            call assert(res%files(2)%token == "49cc14d8-c4da-410a-91f7-09848f1e8466", "Associate Files response file token 2 wrong")
+            print *,"Associate Files test passed"
+        end subroutine test_associate_files
+
+        subroutine test_disassociate_files()
+            ! Given
+            type(album_response) :: res
+            character(len=80), dimension(100) :: files
+            call dispatch_mock%clear_dispatch_mock()
+            dispatch_mock%response%content = response_album_with_files
+            files(1) = "file-token-1"
+            files(2) = "file-token-2"
+            ! When
+            res = disassociateFiles("album-token",files,2)
+            ! Then
+            call assert(dispatch_mock%calls == 1, "Disassociate Files should call dispatch exactly once")
+            call assert(dispatch_mock%target_method == "POST", "Disassociate Files should use POST method")
+            call assert(dispatch_mock%target_url == "https://waifuvault.moe/rest/album/album-token/disassociate", "Disassociate Files URL is wrong")
+            call assert(dispatch_mock%fields == '{"fileTokens":["file-token-1","file-token-2"]}', "Disassociate Files fields are wrong")
+            call assert(res%filecount == 2, "Disassociate Files response files count wrong")
+            call assert(res%name == "Something", "Disassociate Files response album name wrong")
+            call assert(res%token == "b96413f7-2e34-4691-8f44-6b9fcf83ca7c", "Disassociate Files response album token wrong")
+            call assert(res%publicToken == "ce8c7459-b26f-4844-b65a-4d1668308c8e", "Disassociate Files response album public token wrong")
+            call assert(res%bucket == "56a62473-d3ef-48f9-baef-3628a3d23549", "Disassociate Files response album bucket token wrong")
+            call assert(res%files(1)%token == "bb183720-58eb-44d6-9eff-d72536edf302", "Disassociate Files response file token 1 wrong")
+            call assert(res%files(2)%token == "49cc14d8-c4da-410a-91f7-09848f1e8466", "Disassociate Files response file token 2 wrong")
+            print *,"Disassociate Files test passed"
+        end subroutine test_disassociate_files
 
         subroutine test_get_album()
             ! Given

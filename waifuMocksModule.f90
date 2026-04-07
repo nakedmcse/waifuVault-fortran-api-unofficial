@@ -29,6 +29,7 @@ module waifuvault_mocks
     character(len=*), parameter :: response_general_true = '{"success":true, "description":"yes"}'
     character(len=*), parameter :: response_fileStatsResponse = '{"recordCount": 2, "recordSize":100}'
     character(len=*), parameter :: response_restrictionsResponse = '[{"type": "MAX_FILE_SIZE","value": 100},{"type": "BANNED_MIME_TYPE","value": "application/x-msdownload,application/x-executable"}]'
+    character(len=4), parameter :: response_file = char(186) // char(173) // char(240) // char(13)
 
     contains
         subroutine clear_dispatch_mock(this)

@@ -1,5 +1,6 @@
 ! Waifuvault Fortran Mocks
 module waifuvault_mocks
+    use, intrinsic :: iso_c_binding
     use http_callback
     use curl
     implicit none
@@ -10,6 +11,8 @@ module waifuvault_mocks
         character(len=:), allocatable :: target_url
         character(len=:), allocatable :: target_method
         character(len=:), allocatable :: fields
+        character(len=:), allocatable :: headers
+        type(curl_slist), pointer :: header_node
         type(response_type) :: response
         contains
         procedure clear_dispatch_mock
@@ -40,6 +43,7 @@ module waifuvault_mocks
             this%target_url = ""
             this%target_method = ""
             this%fields = ""
+            this%headers = ""
             this%response%content = ""
         end subroutine clear_dispatch_mock
 end module waifuvault_mocks

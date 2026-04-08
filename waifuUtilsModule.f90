@@ -5,9 +5,33 @@ module waifuvault_utils
     implicit none
     private
     public :: stringToLogical, basename, expandHomedir, extension, getHomeDirectory, split_string, remove_characters, &
-                logicalToString, stringToInt, intToString, getMime
+                logicalToString, stringToInt, intToString, getMime, c_ptr_to_string
 
     contains
+
+    function c_ptr_to_string(p) result(s)
+        type(c_ptr), intent(in) :: p
+        character(len=:), allocatable :: s
+        character(kind=c_char), pointer :: raw(:)
+        integer :: i, n
+
+        if (.not. c_associated(p)) then
+            s = ""
+            return
+        end if
+
+        call c_f_pointer(p, raw, [1000000])
+        n = 0
+        do i = 1, size(raw)
+            if (raw(i) == c_null_char) exit
+            n = n + 1
+        end do
+
+        allocate(character(len=n) :: s)
+        do i = 1, n
+            s(i:i) = raw(i)
+        end do
+    end function c_ptr_to_string
 
     function stringToLogical(input) result (res)
         character(len=*) :: input

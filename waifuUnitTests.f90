@@ -1,15 +1,18 @@
 ! Waifuvault Fortran Unit Tests
 program waifuvault_unit_tests
+    use, intrinsic :: iso_c_binding
     use http_callback
     use waifuvault_models
     use waifuvault_mocks
     use waifuvault_api
+    use waifuvault_utils
     implicit none
 
     ! Tests
     call openCurl()
     call test_url_upload()
     call test_file_upload()
+    call test_file_download()
     call test_file_info()
     call test_file_update()
     call test_create_bucket()
@@ -75,6 +78,25 @@ program waifuvault_unit_tests
             call assert(res%retentionPeriod == "100", "File Upload retention period wrong")
             print *,"File Upload test passed"
         end subroutine test_file_upload
+
+        subroutine test_file_download()
+            ! Given
+            type(response_type) :: res
+            type(file_response) :: target
+            target%token = "test-token"
+            target%url = "https://waifuvault.moe/f/something"
+            call dispatch_mock%clear_dispatch_mock()
+            dispatch_mock%response%content = response_file
+            ! When
+            call getFile(target,res,"test-password")
+            ! Then
+            call assert(dispatch_mock%calls == 1, "File Download should call dispatch exactly once")
+            call assert(dispatch_mock%target_method == "GET", "File Download should use GET method")
+            call assert(dispatch_mock%target_url == "https://waifuvault.moe/f/something", "File Download URL is wrong")
+            call assert(dispatch_mock%headers == "x-password: test-password", "File Password header is wrong")
+            call assert(res%content == response_file, "File Download contents are wrong")
+            print *,"File Download test passed"
+        end subroutine test_file_download
 
         subroutine test_file_info()
             ! Given

@@ -85,6 +85,12 @@ module waifuvault_api
             dispatch_mock%target_url = url
             dispatch_mock%target_method = request_type
             dispatch_mock%fields = fields
+
+            if(c_associated(headers)) then
+                call c_f_pointer(headers, dispatch_mock%header_node)
+                if (c_associated(dispatch_mock%header_node%data)) dispatch_mock%headers = c_ptr_to_string(dispatch_mock%header_node%data)
+            end if
+
             body%content = dispatch_mock%response%content
             rc = dispatch_mock%curl_code
 #endif

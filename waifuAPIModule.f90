@@ -19,8 +19,8 @@ module waifuvault_api
 
     public :: openCurl, closeCurl, getError, fileInfo, fileUpdate, getFile, uploadFile, deleteFile, &
         createAlbum, deleteAlbum, getAlbum, shareAlbum, revokeAlbum, associateFiles, disassociateFiles, downloadAlbum, &
-        createBucket, deleteBucket, getBucket, getRestrictions, clearRestrictions, response_callback, &
-        clearError, setAltBaseURL
+        createBucket, deleteBucket, getBucket, getRestrictions, clearRestrictions, checkRestrictions, response_callback, &
+        clearError, setAltBaseURL, getFileStats
     private
 
     contains
@@ -102,6 +102,20 @@ module waifuvault_api
             BASEURL = alt_base_url
         end subroutine setAltBaseURL
 
+        function getFileStats() result (res)
+            type(response_type), target :: body
+            type(stats_response) :: res
+            character(len=:), allocatable :: url
+            integer :: rc
+
+            url = trim(BASEURL) // '/resources/stats/files'
+            call dispatch_curl(rc, 'GET', trim(url), c_null_ptr, body, '')
+            call checkError(rc, body%content)
+
+            res = deserializeStatsResponse(body%content)
+            deallocate(body%content)
+        end function getFileStats
+
         function getRestrictions() result (res)
             type(response_type), target :: body
             character(len=512) :: url
@@ -159,7 +173,7 @@ module waifuvault_api
                         if (filesize > maxfilesize) then
                             ret_error%name = "RESTRICTION EXCEPTION"
                             ret_error%status = 1
-                            ret_error%message = "File " // fullfilename // " size greater than server maximum"
+                            ret_error%message = "File " // trim(fileObj%filename) // " size greater than server maximum"
                         end if
                     elseif (trim(restrictions%restrictions(i)%type) == "BANNED_MIME_TYPE") then
                         ext = extension(trim(fileObj%filename))

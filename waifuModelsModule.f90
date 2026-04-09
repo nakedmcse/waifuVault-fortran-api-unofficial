@@ -100,6 +100,12 @@ module waifuvault_models
         character(len=4096) :: description
     end type general_response
 
+    ! stats_response
+    type, public :: stats_response
+        integer(int64) :: recordCount
+        integer(int64) :: recordSize
+    end type stats_response
+
     contains
 
         subroutine create_upload(this, target, bucket, expires, password, hide_filename, one_time_download)

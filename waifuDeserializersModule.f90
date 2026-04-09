@@ -83,6 +83,20 @@ module waifuvault_deserializers
             end if
         end function general_response_from_ast
 
+        function stats_response_from_ast(stats_ast) result (res)
+            type(json_node) :: stats_ast, ret_ast
+            type(stats_response) :: res
+            if(stats_ast%node_type == "OBJECT") then
+                ret_ast = get_node(stats_ast,".recordCount")
+                res%recordCount = ret_ast%value_int
+                ret_ast = get_node(stats_ast,".recordSize")
+                res%recordSize = ret_ast%value_int
+            else
+                res%recordCount = -1
+                res%recordSize = -1
+            end if
+        end function stats_response_from_ast
+
         function restriction_response_from_ast(restriction_ast) result (res)
             type(json_node) :: restriction_ast, ret_ast
             type(restriction_response) :: res
@@ -272,4 +286,18 @@ module waifuvault_deserializers
 
             res = restriction_response_from_ast(body_ast)
         end function deserializeRestrictionResponse
+
+        function deserializeStatsResponse(body) result (res)
+            type(stats_response) :: res
+            type(json_node) :: body_ast
+            character(len=*) :: body
+
+            body_ast = parse_json(body)
+            if (associated(fjson_error)) then
+                print *, "Error parsing stats response"
+                return
+            end if
+
+            res = stats_response_from_ast(body_ast)
+        end function deserializeStatsResponse
 end module waifuvault_deserializers

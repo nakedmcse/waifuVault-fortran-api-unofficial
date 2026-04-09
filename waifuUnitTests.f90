@@ -29,6 +29,8 @@ program waifuvault_unit_tests
     call test_delete()
     call test_get_restrictions()
     call test_clear_restrictions()
+    call test_check_restrictions()
+    call test_get_file_stats()
     call closeCurl()
 
     contains
@@ -384,4 +386,40 @@ program waifuvault_unit_tests
             call assert(res%restrictions(2)%value == "", "Clear Restrictions second value wrong")
             print *,"Clear Restrictions test passed"
         end subroutine test_clear_restrictions
+
+        subroutine test_check_restrictions()
+            ! Given
+            type(file_upload) :: upload
+            type(restriction_response) :: res
+            type(error_response) :: error
+            call dispatch_mock%clear_dispatch_mock()
+            dispatch_mock%response%content = response_restrictionsResponse
+            call upload%create_upload("RoryMercury.png","","10m","",.false.,.false.)
+            ! When
+            res = getRestrictions()
+            call checkRestrictions(upload)
+            call getError(error)
+            res = clearRestrictions()
+            ! Then
+            call assert(error%status == 1, "Check Restrictions Error Status wrong")
+            call assert(error%name == "RESTRICTION EXCEPTION", "Check Restrictions Error Name wrong")
+            call assert(error%message == "File RoryMercury.png size greater than server maximum", "Check Restrictions Error Message wrong " // error%message)
+            print *,"Check Restrictions test passed"
+        end subroutine test_check_restrictions
+
+        subroutine test_get_file_stats()
+            ! Given
+            type(stats_response) :: res
+            call dispatch_mock%clear_dispatch_mock()
+            dispatch_mock%response%content = response_fileStatsResponse
+            ! When
+            res = getFileStats()
+            ! Then
+            call assert(dispatch_mock%calls == 1, "Get File Stats should call dispatch exactly once")
+            call assert(dispatch_mock%target_method == "GET", "Get File Stats should use GET method")
+            call assert(dispatch_mock%target_url == "https://waifuvault.moe/rest/resources/stats/files", "Get File Stats target URL wrong")
+            call assert(res%recordCount == 2, "Get File Stats record count wrong")
+            call assert(res%recordSize == 100, "Get File Stats record size wrong")
+            print *,"Get File Stats test passed"
+        end subroutine test_get_file_stats
 end program waifuvault_unit_tests

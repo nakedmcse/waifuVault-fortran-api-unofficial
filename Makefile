@@ -35,13 +35,13 @@ testingsdk: httpcallbackModule.f90 waifuModelsModule.f90 waifuUtilsModule.f90 wa
 	gfortran -c waifuModelsModule.f90
 	gfortran -c waifuUtilsModule.f90
 	gfortran -c waifuDeserializersModule.f90
-	gfortran -c waifuMocksModule.f90
+	gfortran -ffree-line-length-0 -c waifuMocksModule.f90
 	gfortran -DWAIFUVAULT_UNIT_TEST -cpp -c waifuAPIModule.f90
 	ar rcs lib-waifuvault.a httpcallbackModule.o waifuModelsModule.o waifuUtilsModule.o waifuDeserializersModule.o waifuAPIModule.o waifuMocksModule.o
 	rm -f *.o
 
 unittests: lib-waifuvault.a libcurl/libfortran-curl.a fjson.a waifuUnitTests.f90
-	gfortran -o waifuunittests waifuUnitTests.f90 lib-waifuvault.a libcurl/libfortran-curl.a fjson.a -lcurl
+	gfortran -ffree-line-length-0 -o waifuunittests waifuUnitTests.f90 lib-waifuvault.a libcurl/libfortran-curl.a fjson.a -lcurl
 
 samples: lib-waifuvault.a fjson.a libcurl/libfortran-curl.a samples/waifutest.f90 samples/waifubuckettest.f90 samples/waifurestrictiontest.f90 samples/waifualbumtest.f90
 	gfortran -o samples/waifutest lib-waifuvault.a libcurl/libfortran-curl.a samples/waifutest.f90 fjson.a -lcurl

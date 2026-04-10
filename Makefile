@@ -36,7 +36,7 @@ testingsdk: httpcallbackModule.f90 waifuModelsModule.f90 waifuUtilsModule.f90 wa
 	gfortran -c waifuUtilsModule.f90
 	gfortran -c waifuDeserializersModule.f90
 	gfortran -ffree-line-length-0 -c waifuMocksModule.f90
-	gfortran -DWAIFUVAULT_UNIT_TEST -cpp -c waifuAPIModule.f90
+	gfortran -DWAIFUVAULT_UNIT_TEST -ffree-line-length-0 -cpp -c waifuAPIModule.f90
 	ar rcs lib-waifuvault.a httpcallbackModule.o waifuModelsModule.o waifuUtilsModule.o waifuDeserializersModule.o waifuAPIModule.o waifuMocksModule.o
 	rm -f *.o
 

@@ -99,20 +99,19 @@ module waifuvault_deserializers
 
         function restriction_response_from_ast(restriction_ast) result (res)
             type(json_node) :: restriction_ast, ret_ast
+            type(restriction) :: restriction
             type(restriction_response) :: res
             integer :: i
             if(restriction_ast%node_type == "ARRAY" .and. restriction_ast%child_nodes_count > 0) then
                 do i = 1, restriction_ast%child_nodes_count
                     ret_ast = get_node(restriction_ast%child_nodes(i),".type")
-                    res%restrictions(i)%type = ret_ast%value_string
+                    restriction%type = ret_ast%value_string
                     ret_ast = get_node(restriction_ast%child_nodes(i),".value")
-                    res%restrictions(i)%value = ret_ast%value_string
+                    restriction%value = ret_ast%value_string
+                    call res%restriction_append(restriction)
                 end do
             else
-                do i = 1, 100
-                    res%restrictions(i)%type = ''
-                    res%restrictions(i)%value = ''
-                end do
+                res%restrictionscount = 0
             end if
         end function restriction_response_from_ast
 

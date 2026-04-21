@@ -136,11 +136,8 @@ module waifuvault_api
 
         function clearRestrictions() result (res)
             type(restriction_response) :: res
-            integer :: i
-            do i = 1, 100
-                restrictions%restrictions(i)%type = ''
-                restrictions%restrictions(i)%value = ''
-            end do
+            if(allocated(restrictions%restrictions)) deallocate(restrictions%restrictions)
+            restrictions%restrictionscount = 0
             res = restrictions
         end function clearRestrictions
 
@@ -154,7 +151,7 @@ module waifuvault_api
             ret_error%status = 0
             ret_error%message = ''
 
-            if (len_trim(fileObj%url) == 0) then
+            if (len_trim(fileObj%url) == 0 .and. restrictions%restrictionscount > 0) then
                 if (len_trim(fileObj%filename) > 0 .and. .not. allocated(fileObj%buffer)) then
                     ! File
                     call expandHomedir(trim(fileObj%filename), fullfilename)
@@ -165,8 +162,7 @@ module waifuvault_api
                     filesize = len(fileObj%buffer)
                 end if
 
-                do i = 1, 100
-                    if (len_trim(restrictions%restrictions(i)%type) == 0) exit
+                do i = 1, restrictions%restrictionscount
                     if (trim(restrictions%restrictions(i)%type) == "MAX_FILE_SIZE") then
                         value = trim(restrictions%restrictions(i)%value)
                         read(value, *, iostat=iostatus) maxfilesize

@@ -380,10 +380,8 @@ program waifuvault_unit_tests
             res = clearRestrictions()
             ! Then
             call assert(dispatch_mock%calls == 0, "Clear Restrictions should not call dispatch")
-            call assert(res%restrictions(1)%type == "", "Clear Restrictions first type wrong")
-            call assert(res%restrictions(1)%value == "", "Clear Restrictions first value wrong")
-            call assert(res%restrictions(2)%type == "", "Clear Restrictions second type wrong")
-            call assert(res%restrictions(2)%value == "", "Clear Restrictions second value wrong")
+            call assert(.not. allocated(res%restrictions), "Clear Restrictions allocated")
+            call assert(res%restrictionscount == 0, "Clear Restrictions restrictionscount not 0")
             print *,"Clear Restrictions test passed"
         end subroutine test_clear_restrictions
 

@@ -82,7 +82,10 @@ module waifuvault_models
 
     ! RestrictionResponse
     type, public :: restriction_response
-        type(restriction), dimension(100) :: restrictions
+        type(restriction), dimension(:), allocatable :: restrictions
+        integer :: restrictionscount
+        contains
+        procedure :: restriction_append
     end type restriction_response
 
     ! ErrorResponse
@@ -249,5 +252,23 @@ module waifuvault_models
             this%albumcount = this%albumcount + 1
             this%albums(this%albumcount) = album
         end subroutine bucket_append_album
+
+        subroutine restriction_append(this, rest)
+            class(restriction_response) :: this
+            type(restriction) :: rest
+            type(restriction), dimension(:), allocatable :: temp
+
+            if(.not. allocated(this%restrictions)) then
+                allocate(this%restrictions(256))
+                this%restrictionscount = 0
+            elseif (size(this%restrictions) == this%restrictionscount) then
+                allocate(temp(this%restrictionscount * 2))
+                temp(1:this%restrictionscount) = this%restrictions(1:this%restrictionscount)
+                call move_alloc(temp, this%restrictions)
+            end if
+
+            this%restrictionscount = this%restrictionscount + 1
+            this%restrictions(this%restrictionscount) = rest
+        end subroutine restriction_append
 
 end module waifuvault_models

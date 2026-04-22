@@ -204,13 +204,13 @@ module waifuvault_models
             type(file_response) :: file
             type(file_response), dimension(:), allocatable :: temp
 
-            if(size(this%files) - this%filecount == 0) then
+            if(.not. allocated(this%files)) then
+                allocate(this%files(256))
+                this%filecount = 0
+            elseif (size(this%files) == this%filecount) then
                 allocate(temp(this%filecount * 2))
-                temp(1:this%filecount) = this%files
-                deallocate(this%files)
-                allocate(this%files(this%filecount * 2))
-                this%files = temp
-                deallocate(temp)
+                temp(1:this%filecount) = this%files(1:this%filecount)
+                call move_alloc(temp, this%files)
             end if
 
             this%filecount = this%filecount + 1
@@ -222,13 +222,13 @@ module waifuvault_models
             type(file_response) :: file
             type(file_response), dimension(:), allocatable :: temp
 
-            if(size(this%files) - this%filecount == 0) then
+            if(.not. allocated(this%files)) then
+                allocate(this%files(256))
+                this%filecount = 0
+            elseif (size(this%files) == this%filecount) then
                 allocate(temp(this%filecount * 2))
-                temp(1:this%filecount) = this%files
-                deallocate(this%files)
-                allocate(this%files(this%filecount * 2))
-                this%files = temp
-                deallocate(temp)
+                temp(1:this%filecount) = this%files(1:this%filecount)
+                call move_alloc(temp, this%files)
             end if
 
             this%filecount = this%filecount + 1
@@ -240,13 +240,13 @@ module waifuvault_models
             type(album_info) :: album
             type(album_info), dimension(:), allocatable :: temp
 
-            if(size(this%albums) - this%albumcount == 0) then
+            if(.not. allocated(this%albums)) then
+                allocate(this%albums(256))
+                this%albumcount = 0
+            elseif (size(this%albums) == this%albumcount) then
                 allocate(temp(this%albumcount * 2))
-                temp(1:this%albumcount) = this%albums
-                deallocate(this%albums)
-                allocate(this%albums(this%albumcount * 2))
-                this%albums = temp
-                deallocate(temp)
+                temp(1:this%albumcount) = this%albums(1:this%albumcount)
+                call move_alloc(temp, this%albums)
             end if
 
             this%albumcount = this%albumcount + 1

@@ -5,7 +5,6 @@ module waifuvault_models
     ! file_upload
     type, public :: file_upload
         character(len=512) :: filename
-        character(len=512) :: url
         character(len=80) :: bucketToken
         character(len=:), allocatable :: buffer
         integer :: buffer_size
@@ -116,17 +115,10 @@ module waifuvault_models
             character(len=*) :: target, bucket, expires, password
             logical :: hide_filename, one_time_download
 
-            this%url = ''
             this%bucketToken = ''
-            this%filename = ''
+            this%filename = target
             this%expires = ''
             this%password = ''
-
-            if(target(1:7) == 'http://' .or. target(1:8) == 'https://') then
-                this%url = target
-            else
-                this%filename = target
-            end if
 
             this%bucketToken = bucket
             this%expires = expires

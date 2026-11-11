@@ -10,6 +10,8 @@ with [waifuvault.moe](https://waifuvault.moe/). Contains a full up to date API f
 This is unofficial and as such will not be supported officially.  Use it at your own risk.  Updates to keep it comparable to the official
 SDKs will be on a best effort basis only.
 
+> **NOTE WELL:** Support for legacy URL uploads feature has been removed
+
 ## Installation
 
 The SDK uses the libcurl-fortran bindings to provide the transport mechanism.  First you must build the libcurl-fortran 
@@ -114,7 +116,6 @@ To Upload a file, use the `uploadFile` function. This function takes the followi
 |-------------------|--------------|-----------------------------------------------------------------|----------------|----------------------------------|
 | `filename`        | `string `    | The path to the file to upload                                  | true if File   | File path                        |
 | `bucketToken`     | `string`     | The token of a bucket to upload the file to                     | false          |                                  |
-| `url`             | `string`     | The URL of the file to target                                   | true if URL    | Filename with extension          |
 | `buffer`          | `byte array` | Byte array containing file to upload                            | true if buffer | Needs filename set also          |
 | `expires`         | `string`     | A string containing a number and a unit (1d = 1day)             | false          | Valid units are `m`, `h` and `d` |
 | `hideFilename`    | `logical`    | If true, then the uploaded filename won't appear in the URL     | false          | Defaults to `false`              |
@@ -123,30 +124,7 @@ To Upload a file, use the `uploadFile` function. This function takes the followi
 
 > **NOTE:** If you use `GetRestrictions` then server restrictions are checked by the SDK client side *before* upload, and will record an error if they are violated
 
-Using a URL:
-
-```fortran
-type(file_upload) :: url_upload
-type(file_response) :: response
-type(error_response) :: error
-
-call url_upload%create_upload('https://waifuvault.moe/assets/custom/images/08.png', '', '10m', '', .false., .false.)
-response = uploadFile(url_upload)
-call getError(error)
-if (error%status > 0) then
-    print *, '--Error Object--'
-    print *, 'Name:', trim(error%name)
-    print *, 'Status:', error%status
-    print *, 'Message:', trim(error%message)
-    print *, ''
-    call clearError()
-else
-    print *, '--URL Upload Response--'
-    print *, 'Token:', trim(response%token)
-    print *, 'URL:', trim(response%url)
-    print *, ''
-end if
-```
+> **NOTE WELL:** Support for legacy URL uploads feature has been removed
 
 Using a file path:
 

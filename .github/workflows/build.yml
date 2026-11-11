@@ -16,11 +16,7 @@ jobs:
     - name: Update repos
       run: sudo apt-get update
     - name: Install Dependencies
-      run: sudo apt-get install libcurl4-openssl-dev
-    - name: Setup GCC
-      uses: Dup4/actions-setup-gcc@v1
-      with:
-        version: latest
+      run: sudo apt-get install -y libcurl4-openssl-dev
     - name: Build tests
       run: make buildunittests
     - name: Run tests

@@ -151,7 +151,7 @@ module waifuvault_api
             ret_error%status = 0
             ret_error%message = ''
 
-            if (len_trim(fileObj%url) == 0 .and. restrictions%restrictionscount > 0) then
+            if (restrictions%restrictionscount > 0) then
                 if (len_trim(fileObj%filename) > 0 .and. .not. allocated(fileObj%buffer)) then
                     ! File
                     call expandHomedir(trim(fileObj%filename), fullfilename)
@@ -436,18 +436,7 @@ module waifuvault_api
             end if
 
             target_url = trim(BASEURL) // fileObj%build_url()
-            if (len_trim(fileObj%url) > 0) then
-                ! URL Upload
-                fields = 'url='
-                fields = trim(fields) // curl_easy_escape(curl_ptr, trim(fileObj%url), len_trim(fileObj%url))
-
-                if (len_trim(fileObj%password) > 0) then
-                    fields = trim(fields) // '&password=' &
-                     // curl_easy_escape(curl_ptr, trim(fileObj%password), len_trim(fileObj%password))
-                end if
-
-                call dispatch_curl(rc, 'PUT', trim(target_url), c_null_ptr, body, fields)
-            elseif (len_trim(fileObj%filename) > 0 .and. .not. allocated(fileObj%buffer)) then
+            if (len_trim(fileObj%filename) > 0 .and. .not. allocated(fileObj%buffer)) then
                 ! File Upload
                 call expandHomedir(trim(fileObj%filename), fullfilename)
                 open(unit=10, file=fullfilename, form='unformatted', access='stream', action='read', iostat=iostatus)

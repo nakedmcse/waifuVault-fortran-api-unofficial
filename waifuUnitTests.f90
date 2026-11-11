@@ -10,7 +10,6 @@ program waifuvault_unit_tests
 
     ! Tests
     call openCurl()
-    call test_url_upload()
     call test_file_upload()
     call test_file_download()
     call test_file_info()
@@ -42,25 +41,6 @@ program waifuvault_unit_tests
                 error stop
             end if
         end subroutine assert
-
-        subroutine test_url_upload()
-            ! Given
-            type(file_upload) :: upload
-            type(file_response) :: res
-            call dispatch_mock%clear_dispatch_mock()
-            dispatch_mock%response%content = response_fileInfoOK
-            call upload%create_upload("https://waifuvault.moe/assets/custom/images/08.png","","10m","",.false.,.false.)
-            ! When
-            res = uploadFile(upload)
-            ! Then
-            call assert(dispatch_mock%calls == 1, "URL Upload should call dispatch exactly once")
-            call assert(dispatch_mock%target_method == "PUT", "URL Upload should use PUT method")
-            call assert(res%url == "https://waifuvault.moe/f/something", "URL Upload response URL wrong")
-            call assert(res%token == "test-token", "URL Upload response token wrong" // res%token)
-            call assert(.not. res%options%protected, "URL Upload response options wrong")
-            call assert(res%retentionPeriod == "100", "URL Upload retention period wrong")
-            print *,"URL Upload test passed"
-        end subroutine test_url_upload
 
         subroutine test_file_upload()
             ! Given

@@ -4,6 +4,8 @@ build: curl fjson sdk
 
 buildunittests: curl fjson testingsdk unittests
 
+buildunittests.mac: curl fjson testingsdk unittests.mac
+
 fjson:
 	git clone https://github.com/nakedmcse/fjson.git
 	make -C fjson fjson
@@ -42,6 +44,9 @@ testingsdk: httpcallbackModule.f90 waifuModelsModule.f90 waifuUtilsModule.f90 wa
 
 unittests: lib-waifuvault.a libcurl/libfortran-curl.a fjson.a waifuUnitTests.f90
 	gfortran -ffree-line-length-0 -o waifuunittests waifuUnitTests.f90 lib-waifuvault.a libcurl/libfortran-curl.a fjson.a -lcurl
+
+unittests.mac: lib-waifuvault.a libcurl/libfortran-curl.a fjson.a waifuUnitTests.f90
+	gfortran -ffree-line-length-0 -o waifuunittests waifuUnitTests.f90 lib-waifuvault.a libcurl/libfortran-curl.a fjson.a -L/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib -lcurl
 
 samples: lib-waifuvault.a fjson.a libcurl/libfortran-curl.a samples/waifutest.f90 samples/waifubuckettest.f90 samples/waifurestrictiontest.f90 samples/waifualbumtest.f90
 	gfortran -o samples/waifutest lib-waifuvault.a libcurl/libfortran-curl.a samples/waifutest.f90 fjson.a -lcurl
